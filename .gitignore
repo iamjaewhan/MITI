@@ -141,7 +141,7 @@ env.bak/
 venv.bak/
 
 secrets.json
-
+migrations/
 # Spyder project settings
 .spyderproject
 .spyproject
