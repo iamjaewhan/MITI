@@ -46,11 +46,11 @@ ALLOWED_HOSTS = []
 
 # Application definition
 APPS = [
-    
+    'places',
 ]
 
 THIRD_PARTIES = [
-    
+    'rest_framework',
 ]
 
 INSTALLED_APPS = [
@@ -60,7 +60,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-]
+] + APPS + THIRD_PARTIES
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
