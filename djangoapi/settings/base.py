@@ -47,6 +47,7 @@ ALLOWED_HOSTS = []
 # Application definition
 APPS = [
     'places',
+    'users',
 ]
 
 THIRD_PARTIES = [
