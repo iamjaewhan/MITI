@@ -52,6 +52,7 @@ APPS = [
 
 THIRD_PARTIES = [
     'rest_framework',
+    'rest_framework_simplejwt',
 ]
 
 INSTALLED_APPS = [
