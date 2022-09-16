@@ -1,13 +1,14 @@
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from django.contrib.auth import authenticate
 from rest_framework import status, views
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
+
 from .serializers import *
+from .permissions import IsOwner
 
 # Create your views here.
 class UserSignupView(views.APIView):
@@ -53,6 +54,23 @@ class UserLogoutView(views.APIView):
             return Response(status=status.HTTP_400_BAD_REQUEST)
         
 
+class UserUpdateView(views.APIView):
+    permission_classes = [IsOwner]
+
+    def get_object(self):
+        obj = get_object_or_404(get_user_model(), id=self.kwargs['user_id'])
+        self.check_object_permissions(self.request, obj)
+        return obj
+    
+    def delete(self, request, user_id):
+        try:
+            user = self.get_object()
+            if user:
+                serializer = BaseUserSerializer(user)
+                if serializer.delete():
+                    return Response(status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
 class UserListView(views.APIView):
     permission_classes = [IsAdminUser]
     

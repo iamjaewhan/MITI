@@ -1,3 +1,4 @@
+from django.db import transaction
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
@@ -16,5 +17,14 @@ class BaseUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = get_user_model()
         fields = ['id', 'email', 'username']
+        
+    def delete(self):
+        try:
+            with transaction.atomic():
+                self.instance.deleted_at = datetime.now()
+                self.instance.save()
+                return True
+        except Exception:
+            return False
 
 
