@@ -3,6 +3,7 @@ from django.contrib.auth import authenticate
 from rest_framework import status, views
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
@@ -51,3 +52,11 @@ class UserLogoutView(views.APIView):
         except Exception as e:
             return Response(status=status.HTTP_400_BAD_REQUEST)
         
+
+class UserListView(views.APIView):
+    permission_classes = [IsAdminUser]
+    
+    def get(self, request):
+        queryset = get_user_model().objects.all()
+        serializer = BaseUserSerializer(queryset, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
