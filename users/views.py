@@ -71,6 +71,17 @@ class UserUpdateView(views.APIView):
                     return Response(status=status.HTTP_200_OK)
         except Exception as e:
             return Response(status=status.HTTP_400_BAD_REQUEST)
+    def put(self, request, user_id):
+        try:
+            user = self.get_object()
+            if user:
+                serializer = BaseUserSerializer(user)
+                if serializer.restore():
+                    return Response(serializer.data ,status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response(status=status.HTTP_400_BAD_REQUEST)  
+    
+
 class UserListView(views.APIView):
     permission_classes = [IsAdminUser]
     

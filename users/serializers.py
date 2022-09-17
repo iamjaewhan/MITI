@@ -26,5 +26,15 @@ class BaseUserSerializer(serializers.ModelSerializer):
                 return True
         except Exception:
             return False
+        
+    def restore(self):
+        try:
+            with transaction.atomic():
+                self.instance.deleted_at = None
+                self.instance.save()
+                return True
+        except Exception:
+            return False
+        
 
 
