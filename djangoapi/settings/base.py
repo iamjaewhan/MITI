@@ -49,6 +49,7 @@ ALLOWED_HOSTS = []
 APPS = [
     'places',
     'users',
+    'games',
 ]
 
 THIRD_PARTIES = [
