@@ -24,32 +24,32 @@ class UserSignupView(views.APIView):
             return Response(status=status.HTTP_400_BAD_REQUEST)
         
         
-class UserLoginView(views.APIView):
+class UserLoginView(views.APIView):   
     def post(self, request):
         user = authenticate(email=request.data.get('email', None), password=request.data.get('password', None))
         if user:
             serializer = BaseUserSerializer(user)
             token = TokenObtainPairSerializer.get_token(user)
-            refresh_token = str(token)
-            access_token = str(token.access_token)
             res_data = {
                 "user": serializer.data,
-                "access_token": access_token,
-                "refresh_token": refresh_token,
+                "access": str(token.access_token),
+                "refresh": str(token),
             }
             return Response(data=res_data, status=status.HTTP_200_OK)
         return Response(status=status.HTTP_400_BAD_REQUEST)
-    
+        
     
 class UserLogoutView(views.APIView):
     permission_classes = [IsAuthenticated]
     
     def post(self, request):
         try:
-            refresh_token = request.data.get('refresh_token', None)
-            token = RefreshToken(refresh_token)
-            token.blacklist()
-            return Response(status=status.HTTP_200_OK)
+            refresh_token = request.data.get('refresh', None)
+            if refresh_token:
+                token = RefreshToken(refresh_token)
+                token.blacklist()
+                return Response(status=status.HTTP_200_OK)
+            return Response(status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response(status=status.HTTP_400_BAD_REQUEST)
         
