@@ -71,6 +71,18 @@ class UserUpdateView(views.APIView):
                     return Response(status=status.HTTP_200_OK)
         except Exception as e:
             return Response(status=status.HTTP_400_BAD_REQUEST)
+    
+    def patch(self, request, user_id):
+        try:
+            user = self.get_object()
+            if user:
+                serializer = UserUpdateSerializer(user, data=request.data)
+                if serializer.is_valid():
+                    updated_user = serializer.save()
+                    return Response(BaseUserSerializer(updated_user).data, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+    
     def put(self, request, user_id):
         try:
             user = self.get_object()
