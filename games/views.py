@@ -35,3 +35,21 @@ class GameDetailView(views.APIView):
             return Response(status=status.HTTP_200_OK)
         except Exception as e:
             return Response(status=status.HTTP_404_NOT_FOUND)                
+
+
+class PlayerListView(views.APIView):
+    permission_classes = [IsAuthenticated]
+    def post(self, request, game_id):
+        try:
+            data = {
+                'game': game_id,
+                'user': request.user.id
+            }
+            serializer = ParticipationSerializer(data=data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+    

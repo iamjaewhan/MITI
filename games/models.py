@@ -45,8 +45,14 @@ class Game(models.Model):
         ordering  = ['start_datetime']
     
     
+class Participation(models.Model):
+    game = models.ForeignKey(Game, on_delete=models.PROTECT)
+    user = models.ForeignKey(get_user_model(), on_delete=models.CASCADE)
     
-        
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['game', 'user'], name='unique participation')
+        ]
 
     
     

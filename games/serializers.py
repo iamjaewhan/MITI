@@ -38,3 +38,13 @@ class GameDetailSerializer(serializers.ModelSerializer):
         model = Game
         fields = '__all__'
         
+        
+class ParticipationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Participation
+        fields = '__all__'
+        
+    def validate(self, data):
+        game = data['game']
+        if game.invitation > len(Participation.objects.filter(game=game.id)):
+            return data
