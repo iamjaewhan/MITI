@@ -43,7 +43,7 @@ class GameDetailView(views.APIView):
 class PlayerListView(views.APIView):
     
     def get_queryset(self):
-        objs = list(map(lambda x:x.user, Participation.objects.filter(game_id=self.kwargs['game_id'])))
+        objs = Participation.objects.filter(game_id=self.kwargs['game_id'])
         self.check_object_permissions(self.request, objs)
         return objs
     
@@ -57,7 +57,8 @@ class PlayerListView(views.APIView):
     
     def get(self, request, game_id):
         queryset = self.get_queryset()
-        serializer = BaseUserSerializer(queryset, many=True)
+        objs = list(map(lambda x:x.user, queryset))
+        serializer = BaseUserSerializer(objs, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
     
     def post(self, request, game_id):
@@ -73,4 +74,4 @@ class PlayerListView(views.APIView):
             return Response(status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response(status=status.HTTP_400_BAD_REQUEST)
-    
+        
