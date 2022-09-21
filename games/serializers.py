@@ -6,7 +6,11 @@ from users.serializers import BaseUserSerializer
 from places.serializers import BasePlaceSerializer
 
 class BaseGameSerializer(serializers.ModelSerializer):
-    place = BasePlaceSerializer(read_only=True)
+    class Meta:
+        model = Game
+        fields = '__all__'
+        
+
 class GameRegisterSerializer(serializers.ModelSerializer):
     start_datetime = serializers.DateTimeField()
     end_datetime = serializers.DateTimeField()
