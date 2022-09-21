@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils import timezone
 from django.contrib.auth import get_user_model
 from django.core.validators import MaxValueValidator, MinValueValidator
 
@@ -26,9 +27,9 @@ class Game(models.Model):
             MaxValueValidator(255)
         ]
     )
-    start_datetime = models.DateTimeField(auto_now_add=True)
-    end_datetime = models.DateTimeField(auto_now_add=True)
-    place = models.ForeignKey(Place, on_delete=models.PROTECT)
+    start_datetime = models.DateTimeField(default=timezone.now, null=False)
+    end_datetime = models.DateTimeField(default=timezone.now, null=False)
+    address = models.CharField(max_length=255, default='경기도 화성시 동탄대로 6길 20')
     info = models.CharField(max_length=255, null=True)
     
     objects = OpenedGameManager()

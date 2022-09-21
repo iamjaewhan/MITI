@@ -1,3 +1,4 @@
+from django.utils import timezone
 from rest_framework import serializers
 
 from .models import *
@@ -5,7 +6,26 @@ from places.serializers import BasePlaceSerializer
 
 class BaseGameSerializer(serializers.ModelSerializer):
     place = BasePlaceSerializer(read_only=True)
+class GameRegisterSerializer(serializers.ModelSerializer):
+    start_datetime = serializers.DateTimeField()
+    end_datetime = serializers.DateTimeField()
     
     class Meta:
         model = Game
         fields = '__all__'
+        
+    def validate_start_datetime(self, value):
+        if value > timezone.now():
+            return value
+        raise ValueError()
+    
+    def validate_end_datetime(self, value):
+        if value > timezone.now():
+            return value
+        raise ValueError()
+    
+    def validate(self, data):
+        if data['start_datetime'] >= data['end_datetime']:
+            raise ValueError()
+        return data
+    
