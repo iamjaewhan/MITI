@@ -3,18 +3,23 @@ from django.utils import timezone
 from django.contrib.auth import get_user_model
 from django.core.validators import MaxValueValidator, MinValueValidator
 
-from datetime import datetime, timedelta
 from places.models import Place
 
 # Create your models here.
 
 class OpenedGameManager(models.Manager):
     def get_queryset(self):
-        return super().get_queryset().filter(start_datetime__gt=datetime.now())
+        return super().get_queryset().filter(start_datetime__gt=timezone.now())
+
     
 class ClosedGameManager(models.Manager):
     def get_queryset(self):
-        return super().get_queryset().filter(start_datetime__lte=datetime.now())
+        return super().get_queryset().filter(start_datetime__lte=timezone.now())
+
+
+class AllGameManager(models.Manager):
+    def get_queryset(self):
+        return super().get_queryset()
 
 
 class Game(models.Model):
@@ -34,6 +39,7 @@ class Game(models.Model):
     
     objects = OpenedGameManager()
     closed_objects = ClosedGameManager()
+    all_objects = AllGameManager()
     
     class Meta:
         ordering  = ['start_datetime']

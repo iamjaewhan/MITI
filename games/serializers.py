@@ -2,6 +2,7 @@ from django.utils import timezone
 from rest_framework import serializers
 
 from .models import *
+from users.serializers import BaseUserSerializer
 from places.serializers import BasePlaceSerializer
 
 class BaseGameSerializer(serializers.ModelSerializer):
@@ -29,3 +30,11 @@ class GameRegisterSerializer(serializers.ModelSerializer):
             raise ValueError()
         return data
     
+    
+class GameDetailSerializer(serializers.ModelSerializer):
+    host = BaseUserSerializer(read_only=True)
+    
+    class Meta:
+        model = Game
+        fields = '__all__'
+        

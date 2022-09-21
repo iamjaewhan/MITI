@@ -23,3 +23,15 @@ class GameListView(views.APIView):
         return Response(status.status.HTTP_400_BAD_REQUEST)        
         
         
+class GameDetailView(views.APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, game_id):
+        try:
+            game_instance = Game.objects.get(id=game_id)
+            if game_instance:
+                serializer = GameDetailSerializer(game_instance)
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response(status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response(status=status.HTTP_404_NOT_FOUND)                
