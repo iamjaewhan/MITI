@@ -3,10 +3,10 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 
 from users.serializers import BaseUserSerializer
+from utils.permissions import IsOwner, IsParticipant
 
 from .models import *
 from .serializers import *
-from .permissions import IsParticipant
 
 # Create your views here.
 class GameListView(views.APIView):
@@ -41,19 +41,12 @@ class GameDetailView(views.APIView):
 
 
 class PlayerListView(views.APIView):
+    permission_classes = [IsAuthenticated]
     
     def get_queryset(self):
         objs = Participation.objects.filter(game_id=self.kwargs['game_id'])
         self.check_object_permissions(self.request, objs)
         return objs
-    
-    def get_permissions(self):
-        permission_classes = []
-        if self.request.method == 'GET':
-            permission_classes = [IsAuthenticated]
-        elif self.request.method == 'POST':
-            permission_classes = [IsParticipant]
-        return [permission() for permission in permission_classes]
     
     def get(self, request, game_id):
         queryset = self.get_queryset()

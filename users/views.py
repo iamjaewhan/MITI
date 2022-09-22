@@ -6,9 +6,9 @@ from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
+from utils.permissions import IsOwner
 
 from .serializers import *
-from .permissions import IsOwner
 
 # Create your views here.
 class UserSignupView(views.APIView):
