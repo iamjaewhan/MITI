@@ -35,7 +35,7 @@ class IsOwner(BasePermission):
 
         Args:
             request : request 객체
-            view : view 객체
+            view : check_object_permission()호출한 view 객체
             obj : User 객체
 
         Raises:
