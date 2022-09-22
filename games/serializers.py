@@ -52,3 +52,7 @@ class ParticipationSerializer(serializers.ModelSerializer):
         game = data['game']
         if game.invitation > len(Participation.objects.filter(game=game.id)):
             return data
+                
+    def delete(self):
+        self.instance.delete()
+        

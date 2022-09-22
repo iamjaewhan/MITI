@@ -68,3 +68,31 @@ class PlayerListView(views.APIView):
         except Exception as e:
             return Response(status=status.HTTP_400_BAD_REQUEST)
         
+
+class PlayerDetailView(views.APIView):
+    
+    def get_object(self):
+        obj = Participation.objects.get(game_id=self.kwargs['game_id'], user_id=self.kwargs['user_id'])
+        self.check_object_permissions(self.request, obj)
+        return obj
+    
+    def get_permissions(self):
+        permission_classes = []
+        if self.request.method == 'GET':
+            permission_classes = [IsParticipant]
+        elif self.request.method == 'DELETE':
+            permission_classes = [IsOwner]
+        return [permission() for permission in permission_classes]
+    
+    def get(self, request, game_id, user_id):
+        obj = self.get_object()
+        serializer = BaseUserSerializer(obj.user)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+    def delete(self, request, game_id, user_id):
+        obj = self.get_object()
+        serializer = ParticipationSerializer(obj)
+        serializer.delete()
+        return Response(status=status.HTTP_200_OK)
+        
+        
