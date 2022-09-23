@@ -7,3 +7,4 @@ class UserPasswordValidator:
     def check_password(value):
         if not re.fullmatch(UserPasswordValidator.REGEX_PASSWORD, value):
             raise ValueError(UserPasswordValidator.default_error_messege)
+        return value
