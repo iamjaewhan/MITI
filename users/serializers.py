@@ -1,8 +1,10 @@
 from django.db import transaction
-from django.contrib.auth import get_user_model
+from django.contrib.auth import get_user_model, authenticate
 from django.contrib.auth.hashers import check_password
 from django.core.exceptions import ValidationError
 from rest_framework import serializers
+from rest_framework.exceptions import AuthenticationFailed
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from datetime import datetime
 
 from utils.fields import PasswordField
@@ -79,6 +81,24 @@ class UserUpdateSerializer(serializers.ModelSerializer):
                 return instance
         except Exception:
             raise ValueError()
+        
+        
+class UserLoginSerializer(serializers.Serializer):
+    id = serializers.IntegerField(read_only=True)
+    email = serializers.EmailField(required=True)
+    password = PasswordField(required=True, write_only=True)
+    access = serializers.CharField(read_only=True)
+    refresh = serializers.CharField(read_only=True)
+    
+    def validate(self, data):
+        user = authenticate(email=data.get('email', None), password=data.get('password', None))
+        if user:
+            token = TokenObtainPairSerializer.get_token(user)
+            data['id'] = user.id
+            data['access'] = str(token.access_token)
+            data['refresh'] = str(token)
+            return data
+        raise AuthenticationFailed('잘못된 로그인 정보입니다.')
 
         
 

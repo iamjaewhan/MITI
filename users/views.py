@@ -1,10 +1,8 @@
 from django.shortcuts import render, get_object_or_404
-from django.contrib.auth import authenticate
 from rest_framework import status, views
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 from utils.permissions import IsOwner
 
@@ -20,20 +18,13 @@ class UserSignupView(views.APIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         
         
-class UserLoginView(views.APIView):   
+class UserLoginView(views.APIView):
+     
     def post(self, request):
-        user = authenticate(email=request.data.get('email', None), password=request.data.get('password', None))
-        if user:
-            serializer = BaseUserSerializer(user)
-            token = TokenObtainPairSerializer.get_token(user)
-            res_data = {
-                "user": serializer.data,
-                "access": str(token.access_token),
-                "refresh": str(token),
-            }
-            return Response(data=res_data, status=status.HTTP_200_OK)
-        return Response(status=status.HTTP_400_BAD_REQUEST)
-        
+        serializer = UserLoginSerializer(data=request.data)
+        if serializer.is_valid(raise_exception=True):
+            return Response(serializer.data, status=status.HTTP_200_OK)    
+    
     
 class UserLogoutView(views.APIView):
     permission_classes = [IsAuthenticated]
