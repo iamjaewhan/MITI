@@ -1,19 +1,26 @@
 from django.db import transaction
 from django.contrib.auth import get_user_model
 from django.contrib.auth.hashers import check_password
+from django.core.exceptions import ValidationError
 from rest_framework import serializers
-
 from datetime import datetime
 
 from utils.fields import PasswordField
 
-class UserSignupSerializer(serializers.Serializer):
-    email = serializers.EmailField(required=True)
-    username = serializers.CharField(required=True)
+class UserSignupSerializer(serializers.ModelSerializer):
     password = PasswordField(required=True)
     password_check = PasswordField(required=True)
     
-    def create(self, validated_data):
+    class Meta:
+        model = get_user_model()
+        fields = ['email', 'username', 'password', 'password_check']
+    
+    def validate(self, data):
+        if data['password'] != data['password_check']:
+            raise serializers.ValidationError("비밀번호가 일치하지 않습니다.")
+        return data
+    
+    def create(self, validated_data):        
         user = get_user_model().objects.create_user(**validated_data)
         return user
         

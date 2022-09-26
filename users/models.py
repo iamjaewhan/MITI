@@ -6,22 +6,20 @@ from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 class UserManager(BaseUserManager):
     use_for_related_fields = True
     
-    def create_user(self, email, username, password, password_check):
+    def create_user(self, email=None, username=None, password=None, password_check=None):
         if not email:
-            raise ValueError('올바르지 않은 입력입니다.')
+            raise ValueError('이메일은 필수 입력 사항입니다.')
         if not username:
-            raise ValueError('올바르지 않은 입력입니다.')
+            raise ValueError('사용자 이름은 필수 입력 사항입니다.')
         if not password:
-            raise ValueError('올바르지 않은 입력입니다.')
-        if password == password_check:
-            user = self.model(email=self.normalize_email(email), username=username)
-            user.set_password(password)
-            user.save()
-            return user
-        else:
-            raise ValueError('올바르지 않은 입력입니다.')
-    
-    def create_superuser(self, email, password):
+            raise ValueError('비밀번호는 필수 입력 사항입니다.')
+        user = self.model(email=self.normalize_email(email), username=username)
+        user.set_password(password)
+        user.save()
+        return user
+        
+            
+    def create_superuser(self, email=None, password=None, password_check=None):
         user = self.create_user(email=email, username=username, password=password, password_check=password_check)
         user.is_staff = True
         user.save()
