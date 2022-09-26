@@ -56,6 +56,7 @@ class BaseUserSerializer(serializers.ModelSerializer):
 class UserUpdateSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(required=False)
     username = serializers.CharField(required=False)
+    password = PasswordField(required=True)
     new_password = PasswordField(required=False)
     
     class Meta:
@@ -64,11 +65,7 @@ class UserUpdateSerializer(serializers.ModelSerializer):
         
     def validate_password(self, value):
         if not check_password(value, self.instance.password):
-            raise ValueError("잘못된 비밀번호입니다.")
-        return value
-        
-    def validate_new_password(self, value):
-        UserPasswordValidator.check_password(value)
+            raise serializers.ValidationError("잘못된 비밀번호입니다.")
         return value
     
     def update(self, instance, validated_data):
