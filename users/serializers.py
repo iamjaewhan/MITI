@@ -5,20 +5,17 @@ from rest_framework import serializers
 
 from datetime import datetime
 
-from .validations import UserPasswordValidator
+from utils.fields import PasswordField
 
 class UserSignupSerializer(serializers.Serializer):
     email = serializers.EmailField(required=True)
     username = serializers.CharField(required=True)
-    password = serializers.CharField(required=True)
-    password_check = serializers.CharField(required=True)
+    password = PasswordField(required=True)
+    password_check = PasswordField(required=True)
     
     def create(self, validated_data):
         user = get_user_model().objects.create_user(**validated_data)
         return user
-    
-    def validate_password(self, value):
-        return UserPasswordValidator.check_password(value)
         
         
 class BaseUserSerializer(serializers.ModelSerializer):
@@ -48,7 +45,7 @@ class BaseUserSerializer(serializers.ModelSerializer):
 class UserUpdateSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(required=False)
     username = serializers.CharField(required=False)
-    new_password = serializers.CharField(required=False)
+    new_password = PasswordField(required=False)
     
     class Meta:
         model = get_user_model()
@@ -67,7 +64,6 @@ class UserUpdateSerializer(serializers.ModelSerializer):
         try:
             with transaction.atomic():
                 instance.email = validated_data.get('email', instance.email)
-                instance.username = validated_data.get('username', instance.username)
                 instance.username = validated_data.get('username', instance.username)
                 new_password = validated_data.get('new_password', None)
                 if new_password:
