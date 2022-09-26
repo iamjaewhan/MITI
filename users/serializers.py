@@ -1,13 +1,15 @@
 from django.db import transaction
 from django.contrib.auth import get_user_model, authenticate
 from django.contrib.auth.hashers import check_password
-from django.core.exceptions import ValidationError
 from rest_framework import serializers
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from rest_framework_simplejwt.tokens import RefreshToken
+
 from datetime import datetime
 
 from utils.fields import PasswordField
+from utils.validators import BaseTokenValidator
 
 class UserSignupSerializer(serializers.ModelSerializer):
     password = PasswordField(required=True)
@@ -99,6 +101,22 @@ class UserLoginSerializer(serializers.Serializer):
             data['refresh'] = str(token)
             return data
         raise AuthenticationFailed('잘못된 로그인 정보입니다.')
+    
+
+class UserLogoutSerializer(serializers.Serializer):
+    refresh = serializers.CharField(required=True, write_only=True, validators=[BaseTokenValidator(),])
+    message = serializers.CharField(read_only=True)
+    
+    def logout(self):
+        token = self.validated_data.get('refresh', None)
+        refresh_token = RefreshToken(token)
+        refresh_token.blacklist()
+        self.validated_data['message'] = '로그아웃되었습니다.'
+        return validated_data
+-    
+        
+        
+
 
         
 
