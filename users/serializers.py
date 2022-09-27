@@ -6,8 +6,6 @@ from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from datetime import datetime
-
 from utils.fields import PasswordField
 from utils.validators import BaseTokenValidator
 
@@ -35,29 +33,17 @@ class BaseUserSerializer(serializers.ModelSerializer):
         fields = ['id', 'email', 'username']
         
     def delete(self):
-        try:
-            with transaction.atomic():
-                self.instance.deleted_at = datetime.now()
-                self.instance.save()
-                return True
-        except Exception:
-            return False
-        
+        self.instance.set_deleted_at()
+            
     def restore(self):
-        try:
-            with transaction.atomic():
-                self.instance.deleted_at = None
-                self.instance.save()
-                return True
-        except Exception:
-            return False
+        self.instance.set_deleted_at_null()
         
 
 class UserUpdateSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(required=False)
     username = serializers.CharField(required=False)
-    password = PasswordField(required=True)
-    new_password = PasswordField(required=False)
+    password = PasswordField(required=True, write_only=True)
+    new_password = PasswordField(required=False, write_only=True)
     
     class Meta:
         model = get_user_model()
@@ -69,17 +55,8 @@ class UserUpdateSerializer(serializers.ModelSerializer):
         return value
     
     def update(self, instance, validated_data):
-        try:
-            with transaction.atomic():
-                instance.email = validated_data.get('email', instance.email)
-                instance.username = validated_data.get('username', instance.username)
-                new_password = validated_data.get('new_password', None)
-                if new_password:
-                    instance.set_password(new_password)
-                instance.save()
-                return instance
-        except Exception:
-            raise ValueError()
+        instance.update(**validated_data)
+        return instance
         
         
 class UserLoginSerializer(serializers.Serializer):
