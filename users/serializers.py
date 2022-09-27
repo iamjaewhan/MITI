@@ -6,8 +6,6 @@ from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from datetime import datetime
-
 from utils.fields import PasswordField
 from utils.validators import BaseTokenValidator
 
@@ -20,11 +18,20 @@ class UserSignupSerializer(serializers.ModelSerializer):
         fields = ['email', 'username', 'password', 'password_check']
     
     def validate(self, data):
+        """_summary_
+        password, password_check 일치 검사
+
+        Raises:
+            serializers.ValidationError: password, password_check 값이 일치하지 않는 경우
+        """
         if data['password'] != data['password_check']:
             raise serializers.ValidationError("비밀번호가 일치하지 않습니다.")
         return data
     
-    def create(self, validated_data):        
+    def create(self, validated_data):
+        """_summary_
+        validated_data로 user 인스턴트 생성 및 DB 저장
+        """      
         user = get_user_model().objects.create_user(**validated_data)
         return user
         
@@ -35,29 +42,17 @@ class BaseUserSerializer(serializers.ModelSerializer):
         fields = ['id', 'email', 'username']
         
     def delete(self):
-        try:
-            with transaction.atomic():
-                self.instance.deleted_at = datetime.now()
-                self.instance.save()
-                return True
-        except Exception:
-            return False
-        
+        self.instance.set_deleted_at()
+            
     def restore(self):
-        try:
-            with transaction.atomic():
-                self.instance.deleted_at = None
-                self.instance.save()
-                return True
-        except Exception:
-            return False
+        self.instance.set_deleted_at_null()
         
 
 class UserUpdateSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(required=False)
     username = serializers.CharField(required=False)
-    password = PasswordField(required=True)
-    new_password = PasswordField(required=False)
+    password = PasswordField(required=True, write_only=True)
+    new_password = PasswordField(required=False, write_only=True)
     
     class Meta:
         model = get_user_model()
@@ -69,17 +64,8 @@ class UserUpdateSerializer(serializers.ModelSerializer):
         return value
     
     def update(self, instance, validated_data):
-        try:
-            with transaction.atomic():
-                instance.email = validated_data.get('email', instance.email)
-                instance.username = validated_data.get('username', instance.username)
-                new_password = validated_data.get('new_password', None)
-                if new_password:
-                    instance.set_password(new_password)
-                instance.save()
-                return instance
-        except Exception:
-            raise ValueError()
+        instance.update(**validated_data)
+        return instance
         
         
 class UserLoginSerializer(serializers.Serializer):
@@ -90,6 +76,19 @@ class UserLoginSerializer(serializers.Serializer):
     refresh = serializers.CharField(read_only=True)
     
     def validate(self, data):
+        """_summary_
+        입력받은 email, password로 회원정보 확인 후 access, refresh token을 data에 추가. -> 분리 필요.
+        
+        Raises:
+            AuthenticationFailed: email,password 일치하는 회원 없는 경우
+        return:
+            data:
+                {
+                    "email": "유저 이메일",
+                    "access": "access token 문자열",
+                    "refresh": "refresh token 문자열"
+                }
+        """
         user = authenticate(email=data.get('email', None), password=data.get('password', None))
         if user:
             token = TokenObtainPairSerializer.get_token(user)
@@ -105,13 +104,20 @@ class UserLogoutSerializer(serializers.Serializer):
     message = serializers.CharField(read_only=True)
     
     def logout(self):
+        """_summary_
+        request body에 있는 refresh token을 blacklist에 추가하여 로그아웃
+
+        Returns:
+            data:
+                {
+                    "message": "로그아웃되었습니다."
+                }
+        """
         token = self.validated_data.get('refresh', None)
         refresh_token = RefreshToken(token)
         refresh_token.blacklist()
         self.validated_data['message'] = '로그아웃되었습니다.'
         return validated_data
--    
-        
         
 
 
