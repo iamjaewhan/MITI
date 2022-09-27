@@ -1,6 +1,6 @@
-from django.db import models
+from django.db import models, transaction
+from django.utils import timezone
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
-
 
 # Create your models here.
 class UserManager(BaseUserManager):
@@ -63,6 +63,27 @@ class User(AbstractBaseUser):
     
     def has_module_perms(self, app_label):
         return self.is_staff
+    
+    @transaction.atomic()
+    def set_deleted_at(self, time=None):
+        if not time:
+            time = timezone.now()
+        self.deleted_at = time
+        self.save()
+    
+    @transaction.atomic()
+    def set_deleted_at_null(self):
+        self.deleted_at = None
+        self.save()
+       
+    @transaction.atomic() 
+    def update(self, **kwargs):
+        self.email = kwargs.get('email', self.email)
+        self.username = kwargs.get('username', self.username)
+        new_password = kwargs.get('new_password', None)
+        if new_password:
+            self.set_password(new_password)
+        self.save()
     
     @property
     def user(self):
