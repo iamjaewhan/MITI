@@ -1,27 +1,25 @@
-from django.db import models
+from django.db import models, transaction
+from django.utils import timezone
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
-
 
 # Create your models here.
 class UserManager(BaseUserManager):
     use_for_related_fields = True
     
-    def create_user(self, email, username, password, password_check):
+    def create_user(self, email=None, username=None, password=None, password_check=None):
         if not email:
-            raise ValueError('올바르지 않은 입력입니다.')
+            raise ValueError('이메일은 필수 입력 사항입니다.')
         if not username:
-            raise ValueError('올바르지 않은 입력입니다.')
+            raise ValueError('사용자 이름은 필수 입력 사항입니다.')
         if not password:
-            raise ValueError('올바르지 않은 입력입니다.')
-        if password == password_check:
-            user = self.model(email=self.normalize_email(email), username=username)
-            user.set_password(password)
-            user.save()
-            return user
-        else:
-            raise ValueError('올바르지 않은 입력입니다.')
-    
-    def create_superuser(self, email, password):
+            raise ValueError('비밀번호는 필수 입력 사항입니다.')
+        user = self.model(email=self.normalize_email(email), username=username)
+        user.set_password(password)
+        user.save()
+        return user
+        
+            
+    def create_superuser(self, email=None, password=None, password_check=None):
         user = self.create_user(email=email, username=username, password=password, password_check=password_check)
         user.is_staff = True
         user.save()
@@ -65,6 +63,27 @@ class User(AbstractBaseUser):
     
     def has_module_perms(self, app_label):
         return self.is_staff
+    
+    @transaction.atomic()
+    def set_deleted_at(self, time=None):
+        if not time:
+            time = timezone.now()
+        self.deleted_at = time
+        self.save()
+    
+    @transaction.atomic()
+    def set_deleted_at_null(self):
+        self.deleted_at = None
+        self.save()
+       
+    @transaction.atomic() 
+    def update(self, **kwargs):
+        self.email = kwargs.get('email', self.email)
+        self.username = kwargs.get('username', self.username)
+        new_password = kwargs.get('new_password', None)
+        if new_password:
+            self.set_password(new_password)
+        self.save()
     
     @property
     def user(self):
