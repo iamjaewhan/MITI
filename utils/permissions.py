@@ -24,7 +24,7 @@ class IsParticipant(BasePermission):
             if obj.user == request.user:
                 return True
             raise PermissionDenied("해당 참여자가 아닙니다.")
-        raise NotAuthenticated("접근 권한이 없습니다.")
+        raise NotAuthenticated("인증된 사용자의 요청이 아닙니다.")
         
 
 class IsOwner(BasePermission):
@@ -35,7 +35,7 @@ class IsOwner(BasePermission):
 
         Args:
             request : request 객체
-            view : view 객체
+            view : check_object_permission()호출한 view 객체
             obj : User 객체
 
         Raises:
@@ -48,5 +48,5 @@ class IsOwner(BasePermission):
         if request.user:
             if obj.user == request.user:
                 return True
-            raise PermissionDenied()
-        raise NotAuthenticated()
+            return PermissionDenied("처리 불가능한 요청입니다.")
+        raise NotAuthenticated("인증된 사용자의 요청이 아닙니다.")
