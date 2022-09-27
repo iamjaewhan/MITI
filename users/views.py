@@ -11,6 +11,21 @@ from .serializers import *
 # Create your views here.
 class UserSignupView(views.APIView):
     def post(self, request):
+        """_summary_
+        회원 가입
+        
+        request body:
+        {
+            "email":"이메일",
+            "username":"사용자명",
+            "password":"비밀번호",
+            "password_check":"비밀번호 확인"
+        }
+
+        Returns:
+            Response:
+                201 : 요청 정상 처리
+        """
         serializer = UserSignupSerializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
             user = serializer.save()
@@ -21,6 +36,19 @@ class UserSignupView(views.APIView):
 class UserLoginView(views.APIView):
      
     def post(self, request):
+        """_summary_
+        로그인 - email, password 검증 후 access, refresh token 발행하여 반환 
+        
+        request body:
+        {
+            "email":"이메일",
+            "password":"비밀번호"
+        }
+        
+        Returns:
+            Response: 
+                200 : 로그인 정상 처리
+        """
         serializer = UserLoginSerializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
             return Response(serializer.data, status=status.HTTP_200_OK)    
@@ -30,6 +58,18 @@ class UserLogoutView(views.APIView):
     permission_classes = [IsAuthenticated]
     
     def post(self, request):
+        """_summary_
+        로그아웃 - refresh token을 blacklist에 추가하여 로그아웃 처리
+         
+        request body:
+        {
+            "refresh":"64-encoded token"
+        }
+        
+        Returns:
+            Response: 
+                200 : 로그아웃 정상 처리
+        """
         serializer = UserLogoutSerializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
             serializer.logout()
@@ -145,6 +185,13 @@ class UserListView(views.APIView):
     permission_classes = [IsAdminUser]
     
     def get(self, request):
+        """_summary_
+        모든 유저의 목록 반환
+
+        Returns:
+            Response:
+                200 : 사용자 정보 목록 반환
+        """
         queryset = get_user_model().objects.all()
         serializer = BaseUserSerializer(queryset, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)

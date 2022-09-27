@@ -18,11 +18,20 @@ class UserSignupSerializer(serializers.ModelSerializer):
         fields = ['email', 'username', 'password', 'password_check']
     
     def validate(self, data):
+        """_summary_
+        password, password_check 일치 검사
+
+        Raises:
+            serializers.ValidationError: password, password_check 값이 일치하지 않는 경우
+        """
         if data['password'] != data['password_check']:
             raise serializers.ValidationError("비밀번호가 일치하지 않습니다.")
         return data
     
-    def create(self, validated_data):        
+    def create(self, validated_data):
+        """_summary_
+        validated_data로 user 인스턴트 생성 및 DB 저장
+        """      
         user = get_user_model().objects.create_user(**validated_data)
         return user
         
@@ -67,6 +76,19 @@ class UserLoginSerializer(serializers.Serializer):
     refresh = serializers.CharField(read_only=True)
     
     def validate(self, data):
+        """_summary_
+        입력받은 email, password로 회원정보 확인 후 access, refresh token을 data에 추가. -> 분리 필요.
+        
+        Raises:
+            AuthenticationFailed: email,password 일치하는 회원 없는 경우
+        return:
+            data:
+                {
+                    "email": "유저 이메일",
+                    "access": "access token 문자열",
+                    "refresh": "refresh token 문자열"
+                }
+        """
         user = authenticate(email=data.get('email', None), password=data.get('password', None))
         if user:
             token = TokenObtainPairSerializer.get_token(user)
@@ -82,13 +104,20 @@ class UserLogoutSerializer(serializers.Serializer):
     message = serializers.CharField(read_only=True)
     
     def logout(self):
+        """_summary_
+        request body에 있는 refresh token을 blacklist에 추가하여 로그아웃
+
+        Returns:
+            data:
+                {
+                    "message": "로그아웃되었습니다."
+                }
+        """
         token = self.validated_data.get('refresh', None)
         refresh_token = RefreshToken(token)
         refresh_token.blacklist()
         self.validated_data['message'] = '로그아웃되었습니다.'
         return validated_data
--    
-        
         
 
 
