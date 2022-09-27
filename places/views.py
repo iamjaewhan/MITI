@@ -1,6 +1,7 @@
 from django.shortcuts import render
 from rest_framework import views, status
 from rest_framework.response import Response
+from rest_framework.exceptions import NotFound
 
 
 from .models import *
@@ -19,4 +20,12 @@ class PlaceListView(views.APIView):
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(status=status.HTTP_400_BAD_REQUEST)
+        return Response(status=status.HTTP_400_BAD_REQUEST)class PlaceDetailView(views.APIView):
+    def get(self, request, place_id):
+        queryset = Place.objects.filter(id=place_id)
+        if queryset:
+            serializer = BasePlaceSerializer(queryset[0])
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        raise NotFound("유효하지 않은 요청값입니다.")
+        
+        
