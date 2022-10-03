@@ -19,7 +19,7 @@ class UserManager(BaseUserManager):
         return user
         
             
-    def create_superuser(self, email=None, password=None, password_check=None):
+    def create_superuser(self, email=None, username=None, password=None, password_check=None):
         user = self.create_user(email=email, username=username, password=password, password_check=password_check)
         user.is_staff = True
         user.save()
