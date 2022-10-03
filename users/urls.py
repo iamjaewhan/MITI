@@ -5,10 +5,10 @@ from dj_rest_auth.jwt_auth import get_refresh_view
 from .views import *
 
 urlpatterns = [
-    path('logout/', UserLogoutView.as_view()),
-    path('<int:user_id>/', UserUpdateView.as_view()),
-    path('token/refresh/', get_refresh_view().as_view()),
-    path('', UserListView.as_view()),
     path('signup/', UserSignupView.as_view(), name='signup'),
     path('login/', UserLoginView.as_view(), name='login'),
+    path('logout/', UserLogoutView.as_view(), name='logout'),
+    path('<int:user_id>/', UserUpdateView.as_view(), name='user_update'),
+    path('token/refresh/', get_refresh_view().as_view(), name='token_refresh'),
+    path('', UserListView.as_view(), name=''),
 ]
