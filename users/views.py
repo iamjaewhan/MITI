@@ -155,7 +155,7 @@ class UserUpdateView(views.APIView):
         user = self.get_object()
         if user:
             serializer = UserUpdateSerializer(user, data=request.data)
-            if serializer.is_valid():
+            if serializer.is_valid(raise_exception=True):
                 updated_user = serializer.save()
                 return Response(BaseUserSerializer(updated_user).data, status=status.HTTP_200_OK)
         raise NotFound("일치하는 회원이 존재하지 않습니다.")
