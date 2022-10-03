@@ -46,7 +46,7 @@ class IsOwner(BasePermission):
             boolean : User 객체와 request 보낸 사용자가 불일치 하는 경우 True
         """
         if request.user:
-            if obj.user == request.user:
+            if obj == request.user:
                 return True
-            return PermissionDenied("처리 불가능한 요청입니다.")
+            return PermissionDenied("해당 요청의 권한이 없습니다.")
         raise NotAuthenticated("인증된 사용자의 요청이 아닙니다.")
