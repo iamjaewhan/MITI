@@ -54,6 +54,7 @@ class Participation(models.Model):
         constraints = [
             models.UniqueConstraint(fields=['game', 'user'], name='unique participation')
         ]
-
-    
+        
+    def is_fulfilled(self):
+        return self.game.min_invitation <= len(Participation.objects.filter(game=self.game.id))
     
