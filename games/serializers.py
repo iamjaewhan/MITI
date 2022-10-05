@@ -4,6 +4,7 @@ from rest_framework import serializers
 from .models import *
 from users.serializers import BaseUserSerializer
 from places.serializers import BasePlaceSerializer
+from alarms.models import Alarm
 
 class BaseGameSerializer(serializers.ModelSerializer):
     class Meta:
@@ -82,4 +83,12 @@ class ParticipationSerializer(serializers.ModelSerializer):
         serializer로 전달한 객체를 삭제
         """
         self.instance.delete()
+        
+    def create(self, validated_data):
+        obj = self.Meta.model.objects.create(**validated_data)
+        if obj.is_fulfilled():
+            participations = self.Meta.model.objects.filter(game=obj.game.id)
+            for p in participations:
+                Alarm.objects.get_or_create(game = p.game, user=p.user)
+        return obj
         

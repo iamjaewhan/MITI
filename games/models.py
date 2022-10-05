@@ -56,5 +56,5 @@ class Participation(models.Model):
         ]
         
     def is_fulfilled(self):
-        return self.game.min_invitation <= len(Participation.objects.filter(game=self.game.id))
+        return self.game.min_invitation == len(Participation.objects.filter(game=self.game.id))
     
