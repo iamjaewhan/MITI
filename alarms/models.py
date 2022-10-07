@@ -16,3 +16,5 @@ class Alarm(models.Model):
     is_sent = models.BooleanField(null=False, default=False)
     
     objects = AlarmManager()
+    all_objects = models.Manager()
+    
