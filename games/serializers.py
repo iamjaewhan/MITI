@@ -84,11 +84,3 @@ class ParticipationSerializer(serializers.ModelSerializer):
         """
         self.instance.delete()
         
-    def create(self, validated_data):
-        obj = self.Meta.model.objects.create(**validated_data)
-        if obj.is_fulfilled():
-            participations = self.Meta.model.objects.filter(game=obj.game.id)
-            for p in participations:
-                Alarm.objects.get_or_create(game = p.game, user=p.user)
-        return obj
-        
