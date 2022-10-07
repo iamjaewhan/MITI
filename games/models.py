@@ -33,6 +33,7 @@ class Game(models.Model):
         ]
     )
     min_invitation = models.IntegerField(default=1, null=False)
+    player = models.IntegerField(default=0, null=False)
     start_datetime = models.DateTimeField(default=timezone.now, null=False)
     end_datetime = models.DateTimeField(default=timezone.now, null=False)
     address = models.CharField(max_length=255, default='경기도 화성시 동탄대로 6길 20')
