@@ -45,6 +45,9 @@ class Game(models.Model):
     
     class Meta:
         ordering  = ['start_datetime']
+        
+    def is_fulfilled(self):
+        return self.min_invitation == self.player
     
     
 class Participation(models.Model):
@@ -55,7 +58,4 @@ class Participation(models.Model):
         constraints = [
             models.UniqueConstraint(fields=['game', 'user'], name='unique participation')
         ]
-        
-    def is_fulfilled(self):
-        return self.game.min_invitation == len(Participation.objects.filter(game=self.game.id))
-    
+            
