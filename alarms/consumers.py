@@ -28,15 +28,16 @@ class AlarmConsumer(WebsocketConsumer):
         self.accept()
         
         alarms = get_alarms(self.user_id)
-        async_to_sync(self.channel_layer.group_send)(
-            self.user_id, 
-            {
+        async_to_sync(self.channel_layer.group_send)(self.user_id, {
                 "type": "alarms",
                 "data": alarms
             }
         )
         
     def disconnect(self, close_code):
+        alarms = get_alarms(self.user_id)
+        alarms.update(is_sent=True)
+
         async_to_sync(self.channel_layer.group_discard)(
             self.user_id,
             self.channel_name
