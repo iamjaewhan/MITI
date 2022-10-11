@@ -8,9 +8,9 @@ from games.models import Participation, Game
 import time
 
 @receiver(post_save, sender=Game)
-def create_alarm_objs(sender, **kwargs):
-    if not kwargs['created'] and 'player' in kwargs['update_fields']:
-        game = kwargs['instance']
+def create_alarm_objs(sender, instance, created, updated_fields, **kwargs):
+    if not created and 'player' in update_fields:
+        game = instance
         if game.is_fulfilled():
             for participation in Participation.objects.filter(game=game):
                 obj, is_created = Alarm.objects.get_or_create(game=game, user=participation.user)
