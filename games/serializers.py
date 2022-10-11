@@ -5,6 +5,7 @@ from .models import *
 from users.serializers import BaseUserSerializer
 from places.serializers import BasePlaceSerializer
 from alarms.models import Alarm
+from utils.validators import GameTimeValidator
 
 class BaseGameSerializer(serializers.ModelSerializer):
     class Meta:
@@ -13,34 +14,13 @@ class BaseGameSerializer(serializers.ModelSerializer):
         
 
 class GameRegisterSerializer(serializers.ModelSerializer):
-    start_datetime = serializers.DateTimeField()
-    end_datetime = serializers.DateTimeField()
+    start_datetime = serializers.DateTimeField(validators=[GameTimeValidator()])
+    end_datetime = serializers.DateTimeField(validators=[GameTimeValidator()])
     
     class Meta:
         model = Game
         fields = '__all__'
         
-    def validate_start_datetime(self, value):
-        """_summary_
-        start_datetime 유효성 점검
-
-        Raises:
-            ValueError: 현재 시간보다 앞서는 시간일 경우
-        """
-        if value > timezone.now():
-            return value
-        raise ValueError()
-    
-    def validate_end_datetime(self, value):
-        """_summary_
-        end_datetime 유효성 점검
-
-        Raises:
-            ValueError: 현재 시간보다 앞서는 시간일 경우
-        """
-        if value > timezone.now():
-            return value
-        raise ValueError()
     
     def validate(self, data):
         """_summary_
