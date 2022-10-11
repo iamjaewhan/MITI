@@ -1,3 +1,4 @@
+from django.core.exceptions import ValidationError
 from django.utils import timezone
 from rest_framework import serializers
 
@@ -30,7 +31,7 @@ class GameRegisterSerializer(serializers.ModelSerializer):
             ValueError: 종료시간이 시작 시간보다 앞서는 경우
         """
         if data['start_datetime'] >= data['end_datetime']:
-            raise ValueError()
+            raise ValidationError("유효한 경기 시간이 아닙니다.")
         return data
         
         

@@ -45,15 +45,11 @@ class GameListView(views.APIView):
                 400 : 유효하지 않은 데이터 입력
                 401 : 유효하지 않은 access token
         """
-        try:
-            request.data['host'] = request.user.id
-            serializer = GameRegisterSerializer(data=request.data)
-            if serializer.is_valid():
-                game = serializer.save()
-                return Response(serializer.data, status=status.HTTP_201_CREATED)
-            return Response(status=status.HTTP_400_BAD_REQUEST)
-        except:
-            return Response(status=status.HTTP_400_BAD_REQUEST)        
+        request.data['host'] = request.user.id
+        serializer = GameRegisterSerializer(data=request.data)
+        if serializer.is_valid(raise_exception=True):
+            game = serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)        
         
         
 class GameDetailView(views.APIView):
