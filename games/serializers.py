@@ -7,6 +7,11 @@ from users.serializers import BaseUserSerializer
 from places.serializers import BasePlaceSerializer
 from alarms.models import Alarm
 from utils.validators import GameTimeValidator
+from constants.custom_exceptions import (
+    DuplicatedParticipationException,
+    UnParticipatableException,
+    FullGameException
+)
 
 class BaseGameSerializer(serializers.ModelSerializer):
     class Meta:
@@ -45,12 +50,12 @@ class ParticipationSerializer(serializers.ModelSerializer):
         Participation 데이터 생성 가능성 점검
         
         Raises:
-            403 : 초대가 완료되어 지원이 불가능한 경우
+            400 : 모집이 완료된 경기인 경우
         """
         game = data['game']
-        if game.invitation > len(Participation.objects.filter(game=game.id)):
+        if game.invitation > game.player:
             return data
-                
+        raise FullGameException()
     def delete(self):
         """_summary_
         serializer로 전달한 객체를 삭제
