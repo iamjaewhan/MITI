@@ -32,6 +32,8 @@ class Game(models.Model):
             MaxValueValidator(255)
         ]
     )
+    min_invitation = models.IntegerField(default=1, null=False)
+    player = models.IntegerField(default=0, null=False)
     start_datetime = models.DateTimeField(default=timezone.now, null=False)
     end_datetime = models.DateTimeField(default=timezone.now, null=False)
     address = models.CharField(max_length=255, default='경기도 화성시 동탄대로 6길 20')
@@ -43,6 +45,9 @@ class Game(models.Model):
     
     class Meta:
         ordering  = ['start_datetime']
+        
+    def is_fulfilled(self):
+        return self.min_invitation == self.player
     
     
 class Participation(models.Model):
@@ -53,6 +58,4 @@ class Participation(models.Model):
         constraints = [
             models.UniqueConstraint(fields=['game', 'user'], name='unique participation')
         ]
-
-    
-    
+            

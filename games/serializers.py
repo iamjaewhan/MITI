@@ -4,6 +4,7 @@ from rest_framework import serializers
 from .models import *
 from users.serializers import BaseUserSerializer
 from places.serializers import BasePlaceSerializer
+from alarms.models import Alarm
 
 class BaseGameSerializer(serializers.ModelSerializer):
     class Meta:

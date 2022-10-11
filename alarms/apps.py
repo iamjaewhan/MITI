@@ -1,9 +1,9 @@
 from django.apps import AppConfig
 
 
-class GamesConfig(AppConfig):
+class AlarmsConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
-    name = "games"
+    name = "alarms"
     
     def ready(self):
-        import games.signals
+        import alarms.signals

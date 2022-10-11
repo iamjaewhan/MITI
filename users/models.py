@@ -53,7 +53,7 @@ class User(AbstractBaseUser):
     deleted_objects = DeletedUserManager()
     
     def __str__(self):
-        return self.email
+        return "%d "%self.id+self.email
 
     def is_admin(self):
         return self.is_staff

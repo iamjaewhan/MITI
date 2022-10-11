@@ -39,17 +39,12 @@ def get_secret(setting):
 SECRET_KEY = get_secret("SECRET_KEY")
 
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
-ALLOWED_HOSTS = []
-
-
 # Application definition
 APPS = [
     'places',
     'users',
     'games',
+    'alarms',
 ]
 
 THIRD_PARTIES = [
@@ -58,6 +53,7 @@ THIRD_PARTIES = [
     'rest_framework_simplejwt.token_blacklist',
     'rest_framework.authtoken',
     'dj_rest_auth',
+    'channels',
 ]
 
 INSTALLED_APPS = [
@@ -98,6 +94,16 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = "djangoapi.wsgi.application"
+ASGI_APPLICATION = "djangoapi.asgi.application"
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            'hosts': [('127.0.0.1', 6379)],
+        },
+    },
+}
 
 
 # Database
