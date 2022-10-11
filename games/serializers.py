@@ -1,4 +1,6 @@
 from django.core.exceptions import ValidationError
+from django.db import transaction
+from django.db.utils import IntegrityError
 from django.utils import timezone
 from rest_framework import serializers
 
@@ -56,6 +58,24 @@ class ParticipationSerializer(serializers.ModelSerializer):
         if game.invitation > game.player:
             return data
         raise FullGameException()
+        
+    def create(self, validated_data):
+        """_summary_
+        경기 참여 기록을 생성
+
+        Raises:
+            DuplicatedParticipationException: 참여 기록이 이미 존재하는 경우
+
+        Returns:
+            Participation 객체: 생성된 참여 객체
+        """
+        try:
+            with transaction.atomic():
+                obj = self.Meta.model.objects.create(**validated_data)
+            return obj
+        except IntegrityError :
+            raise DuplicatedParticipationException()
+
     def delete(self):
         """_summary_
         serializer로 전달한 객체를 삭제
