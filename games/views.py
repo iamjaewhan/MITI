@@ -1,6 +1,7 @@
 from rest_framework import views, status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from django.shortcuts import get_object_or_404 
 
 from users.serializers import BaseUserSerializer
 from utils.permissions import IsOwner, IsParticipant
@@ -58,6 +59,12 @@ class GameListView(views.APIView):
 class GameDetailView(views.APIView):
     permission_classes = [IsAuthenticated]
     
+    def get_object(self):
+        obj = get_object_or_404(Game.objects.all(), id=self.kwargs['game_id'])
+        self.check_object_permissions(self.request, obj)
+        return obj
+    
+    
     def get(self, request, game_id):
         """_summary_
         경기 상세 조회
@@ -70,14 +77,10 @@ class GameDetailView(views.APIView):
                 200 : 요청 정상 처리
                 404 : 유효하지 않은 game_id
         """
-        try:
-            game_instance = Game.objects.get(id=game_id)
-            if game_instance:
-                serializer = GameDetailSerializer(game_instance)
-                return Response(serializer.data, status=status.HTTP_200_OK)
-            return Response(status=status.HTTP_200_OK)
-        except Exception as e:
-            return Response(status=status.HTTP_404_NOT_FOUND)                
+        game = self.get_object()
+        if game:
+            serializer = BaseGameSerializer(game)
+            return Response(serializer.data, status=status.HTTP_200_OK)               
 
 
 class PlayerListView(views.APIView):

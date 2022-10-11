@@ -52,14 +52,6 @@ class GameRegisterSerializer(serializers.ModelSerializer):
         if data['start_datetime'] >= data['end_datetime']:
             raise ValueError()
         return data
-    
-    
-class GameDetailSerializer(serializers.ModelSerializer):
-    host = BaseUserSerializer(read_only=True)
-    
-    class Meta:
-        model = Game
-        fields = '__all__'
         
         
 class ParticipationSerializer(serializers.ModelSerializer):
