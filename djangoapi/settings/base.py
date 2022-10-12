@@ -121,6 +121,7 @@ REST_FRAMEWORK = {
     'DEFAULT_RENDERER_CLASSES': [
         'utils.renderers.CustomBaseRenderer'  
     ],
+    'EXCEPTION_HANDLER': 'utils.exception_handler.custom_exception_handler'
 }
 
 # Simple-JWT

@@ -1,4 +1,5 @@
 from django.core.exceptions import ValidationError
+from django.utils import timezone
 
 import re
         
@@ -53,3 +54,28 @@ class BaseTokenValidator:
             and (self.message == other.message)
             and (self.code == other.code)
         )
+
+
+class GameTimeValidator:
+    """_summary_
+    경기 시작시간, 종료시간 유효성 검사
+
+    Raises:
+        ValidationError: 현재시간보다 앞선 시점일 경우 ValidationError
+    """
+    
+    message = '유효한 경기 시간이 아닙니다.'
+    code = 'invalid'
+    
+    def __init__(self, message=None, code=None):
+        if message is not None:
+            self.message = message
+        if code is not None:
+            self.code = code
+            
+    def __call__(self, value):
+        if not value:
+            raise ValidationError(self. message, code=self.code, params={'value': value})
+        
+        if not value > timezone.now():
+            raise ValidationError(self. message, code=self.code, params={'value': value})

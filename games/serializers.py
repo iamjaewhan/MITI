@@ -1,3 +1,6 @@
+from django.core.exceptions import ValidationError
+from django.db import transaction
+from django.db.utils import IntegrityError
 from django.utils import timezone
 from rest_framework import serializers
 
@@ -5,6 +8,12 @@ from .models import *
 from users.serializers import BaseUserSerializer
 from places.serializers import BasePlaceSerializer
 from alarms.models import Alarm
+from utils.validators import GameTimeValidator
+from constants.custom_exceptions import (
+    DuplicatedParticipationException,
+    UnParticipatableException,
+    FullGameException
+)
 
 class BaseGameSerializer(serializers.ModelSerializer):
     class Meta:
@@ -13,34 +22,13 @@ class BaseGameSerializer(serializers.ModelSerializer):
         
 
 class GameRegisterSerializer(serializers.ModelSerializer):
-    start_datetime = serializers.DateTimeField()
-    end_datetime = serializers.DateTimeField()
+    start_datetime = serializers.DateTimeField(validators=[GameTimeValidator()])
+    end_datetime = serializers.DateTimeField(validators=[GameTimeValidator()])
     
     class Meta:
         model = Game
         fields = '__all__'
         
-    def validate_start_datetime(self, value):
-        """_summary_
-        start_datetime 유효성 점검
-
-        Raises:
-            ValueError: 현재 시간보다 앞서는 시간일 경우
-        """
-        if value > timezone.now():
-            return value
-        raise ValueError()
-    
-    def validate_end_datetime(self, value):
-        """_summary_
-        end_datetime 유효성 점검
-
-        Raises:
-            ValueError: 현재 시간보다 앞서는 시간일 경우
-        """
-        if value > timezone.now():
-            return value
-        raise ValueError()
     
     def validate(self, data):
         """_summary_
@@ -50,16 +38,8 @@ class GameRegisterSerializer(serializers.ModelSerializer):
             ValueError: 종료시간이 시작 시간보다 앞서는 경우
         """
         if data['start_datetime'] >= data['end_datetime']:
-            raise ValueError()
+            raise ValidationError("유효한 경기 시간이 아닙니다.")
         return data
-    
-    
-class GameDetailSerializer(serializers.ModelSerializer):
-    host = BaseUserSerializer(read_only=True)
-    
-    class Meta:
-        model = Game
-        fields = '__all__'
         
         
 class ParticipationSerializer(serializers.ModelSerializer):
@@ -72,12 +52,30 @@ class ParticipationSerializer(serializers.ModelSerializer):
         Participation 데이터 생성 가능성 점검
         
         Raises:
-            403 : 초대가 완료되어 지원이 불가능한 경우
+            400 : 모집이 완료된 경기인 경우
         """
         game = data['game']
-        if game.invitation > len(Participation.objects.filter(game=game.id)):
+        if game.invitation > game.player:
             return data
-                
+        raise FullGameException()
+        
+    def create(self, validated_data):
+        """_summary_
+        경기 참여 기록을 생성
+
+        Raises:
+            DuplicatedParticipationException: 참여 기록이 이미 존재하는 경우
+
+        Returns:
+            Participation 객체: 생성된 참여 객체
+        """
+        try:
+            with transaction.atomic():
+                obj = self.Meta.model.objects.create(**validated_data)
+            return obj
+        except IntegrityError :
+            raise DuplicatedParticipationException()
+
     def delete(self):
         """_summary_
         serializer로 전달한 객체를 삭제
