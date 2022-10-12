@@ -1,6 +1,5 @@
 from django.dispatch import receiver
 from django.db.models.signals import post_save
-from django.core.signals import request_finished
 
 from .models import Alarm
 from games.models import Participation, Game
