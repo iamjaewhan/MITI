@@ -1,4 +1,4 @@
-from django.db import models
+from django.db import models, transaction
 from django.contrib.auth import get_user_model
 
 from games.models import Game
@@ -17,4 +17,10 @@ class Alarm(models.Model):
     
     objects = AlarmManager()
     all_objects = models.Manager()
+    
+    @transaction.atomic()
+    def set_unsent(self):
+        self.is_sent = False
+        self.save(update_fields=['is_sent'])
+        
     
