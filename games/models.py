@@ -1,4 +1,4 @@
-from django.db import models
+from django.db import models, transaction
 from django.utils import timezone
 from django.contrib.auth import get_user_model
 from django.core.validators import MaxValueValidator, MinValueValidator
@@ -48,6 +48,16 @@ class Game(models.Model):
         
     def is_fulfilled(self):
         return self.min_invitation == self.player
+    
+    @transaction.atomic()
+    def increase_player(self):
+        self.player += 1
+        self.save(update_fields=['player'])
+        
+    @transaction.atomic()
+    def decrease_player(self):
+        self.player -= 1
+        self.save(update_fields=['player'])
     
     
 class Participation(models.Model):
