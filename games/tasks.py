@@ -7,8 +7,11 @@ from games.models import Participation
 def create_alarms(game_id):
     participations = Participation.objects.filter(game=game_id)
     for participation in participations:
-        alarm, created = Alarm.objects.get_or_create(game=participation.game,
-                             user=participation.user)
+        alarm, created = Alarm.objects.get_or_create(
+            game=participation.game,
+            user=participation.user,
+            valid_until=participation.game.start_datetime
+            )
         if not created:
             alarm.set_unsent()
             
