@@ -33,6 +33,6 @@ def _post_delete_receiver(sender, instance, **kwargs):
         instance (participation): delete된 participation 객체
     """
     game = instance.game
-    game.decrese_player()
+    game.decrease_player()
     delete_alarm.delay(instance.game.id, instance.user.id)
     
