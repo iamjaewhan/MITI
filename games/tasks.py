@@ -14,8 +14,20 @@ def create_alarms(game_id):
             )
         if not created:
             alarm.set_unsent()
+    """_summary_
+    특정 경기 참여자들의 알람을 생성하는 task
+
+    Args:
+        game_id (integer): 알람을 생성할 경기 Id
+    """
             
 @shared_task
 def delete_alarm(game_id, user_id):
     alarm = Alarm.objects.filter(game=game_id, user=user_id)
-    alarm.delete()
+    alarm.delete()    """_summary_
+    특정 알람을 삭제하는 task
+
+    Args:
+        game_id (integer): 경기 Id
+        user_id (integer): 참여자 Id
+    """
