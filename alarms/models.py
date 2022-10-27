@@ -1,8 +1,7 @@
 from django.db import models, transaction
 from django.utils import timezone
-from django.contrib.auth import get_user_model
 
-from games.models import Game
+from games.models import Participation
 
 # Create your models here.
 
@@ -12,8 +11,7 @@ class AlarmManager(models.Manager):
 
 
 class Alarm(models.Model):
-    game = models.ForeignKey(Game, on_delete=models.CASCADE)
-    user = models.ForeignKey(get_user_model(), on_delete=models.CASCADE)
+    participation = models.ForeignKey(Participation, on_delete=models.CASCADE)
     is_sent = models.BooleanField(null=False, default=False)
     is_checked = models.BooleanField(null=False, default=False)
     valid_until = models.DateTimeField(null=False, default=timezone.now)
