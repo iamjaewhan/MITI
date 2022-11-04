@@ -11,6 +11,7 @@ def create_alarms(game_id):
     Args:
         game_id (integer): 알람을 생성할 경기 Id
     """
+    
     participations = Participation.objects.filter(game=game_id)
     for participation in participations:
         alarm, created = Alarm.objects.get_or_create(
@@ -19,6 +20,7 @@ def create_alarms(game_id):
             )
         if not created:
             alarm.set_unsent()
+            
             
 @shared_task
 def delete_alarm(game_id, user_id):
@@ -32,4 +34,4 @@ def delete_alarm(game_id, user_id):
     participations = Participation.objects.filter(game=game_id, user=user_id)
     for participation in participations:
         alarm = Alarm.objects.filter(participation=participation)
-        alarm.delete()    
+        alarm.delete()
