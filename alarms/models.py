@@ -22,6 +22,7 @@ class Alarm(models.Model):
     @transaction.atomic()
     def set_unsent(self):
         self.is_sent = False
-        self.save(update_fields=['is_sent'])
+        self.is_checked = False
+        self.save(update_fields=['is_sent', 'is_checked'])
         
     
