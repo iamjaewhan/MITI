@@ -93,7 +93,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = "djangoapi.wsgi.application"
+# WSGI_APPLICATION = "djangoapi.wsgi.application"
 ASGI_APPLICATION = "djangoapi.asgi.application"
 
 CHANNEL_LAYERS = {
@@ -121,7 +121,7 @@ REST_FRAMEWORK = {
     'DEFAULT_RENDERER_CLASSES': [
         'utils.renderers.CustomBaseRenderer'  
     ],
-    'EXCEPTION_HANDLER': 'utils.exception_handler.custom_exception_handler'
+    'EXCEPTION_HANDLER': 'utils.exception_handler.custom_exception_handler',
 }
 
 # Simple-JWT
@@ -176,3 +176,10 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # AUTH_USER_MODEL
 AUTH_USER_MODEL = 'users.User'
 ACCOUNT_USER_MODEL_USERNAME_FIELD = 'email'
+
+
+# Celery settings
+CELERY_TIMEZONE = 'Asia/Seoul'
+CELERY_TASK_TIME_LIMIT = 60 * 60
+CELERYD_CONCURRENCY = 10
+
