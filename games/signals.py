@@ -2,7 +2,7 @@ from django.dispatch import receiver
 from django.db.models.signals import post_save, post_delete
 
 from .models import Participation, Game
-from .tasks import create_alarms, delete_alarm
+from .tasks import create_alarms, delete_alarms, delete_single_alarm
 
 
 @receiver(post_save, sender=Participation)
