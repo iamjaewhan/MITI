@@ -28,6 +28,7 @@ def _post_delete_receiver(sender, instance, **kwargs):
     Participation 모델의 signal receiver
     참여가 취소된 경기의 player 수를 감소시키고
     해당 참여 기록에 해당하는 참여자의 알람을 삭제한다.
+    만약 해당 경기의 최소 모집 인원보다 작아질 경우, 해당 경기의 모든 알람 삭제
 
     Args:
         instance (participation): delete된 participation 객체
@@ -35,5 +36,8 @@ def _post_delete_receiver(sender, instance, **kwargs):
     game = instance.game
     game.decrease_player()
     if game.player < game.min_invitation:
-        delete_alarm.delay(instance.game.id, instance.user.id)
+        delete_alarms.delay(instance.game.id)
+    else:
+        delete_single_alarm.delay(instance.game.id, instance.user.id)
+        
     
