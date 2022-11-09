@@ -34,5 +34,6 @@ def _post_delete_receiver(sender, instance, **kwargs):
     """
     game = instance.game
     game.decrease_player()
-    delete_alarm.delay(instance.game.id, instance.user.id)
+    if game.player < game.min_invitation:
+        delete_alarm.delay(instance.game.id, instance.user.id)
     
