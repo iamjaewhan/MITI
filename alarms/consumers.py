@@ -17,18 +17,11 @@ async def get_serialized_alarms(alarms):
     serializer = AlarmSerializer(alarms, many=True)
     alarms.update(is_sent=True)
     return serializer.data
-
+        
 # @receiver(post_save, sender=Alarm)
-# def post_save_receiver(sender, instance, created, update_fields, **kwargs):
-#     if created:
-#         channel_layer = get_channel_layer()
-#         group_name = str(instance.user.username)
-#         async_to_sync(channel_layer.group_send)(
-#             group_name, {
-#                 'type': 'end_alarms',
-#                 'data': get_serialized_alarms(instance)
-#             }
-#         )
+# def detect_new_alarm(sender=Alarm, **kwargs):
+#     print(kwargs)
+#     print("signal is received comin from celery worker")
 
 
 class AlarmConsumer(AsyncWebsocketConsumer):      
