@@ -23,7 +23,7 @@ def create_alarms(game_id):
             
             
 @shared_task
-def delete_alarm(game_id, user_id):
+def delete_single_alarm(game_id, user_id):
     """_summary_
     특정 알람을 삭제하는 task
 
@@ -32,6 +32,20 @@ def delete_alarm(game_id, user_id):
         user_id (integer): 참여자 Id
     """
     participations = Participation.objects.filter(game=game_id, user=user_id)
+    for participation in participations:
+        alarm = Alarm.objects.filter(participation=participation)
+        alarm.delete()
+        
+
+@shared_task
+def delete_alarms(game_id):
+    """_summary_
+    특정 경기에 해당하는 모든 알람들을 삭제하는 task
+
+    Args:
+        game_id (integer): 경기 id
+    """
+    participations = Participation.objects.filter(game=game_id)
     for participation in participations:
         alarm = Alarm.objects.filter(participation=participation)
         alarm.delete()
