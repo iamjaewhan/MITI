@@ -1,5 +1,5 @@
 from django.dispatch import receiver
-from django.db.models.signals import post_save, pre_delete
+from django.db.models.signals import post_save, post_delete
 
 from .models import Participation, Game
 from .tasks import create_alarms, delete_alarm
