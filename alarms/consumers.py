@@ -11,10 +11,11 @@ import json
 
 
 async def get_alarms(user):
-    return Alarm.objects.filter(user=user)
+    return Alarm.objects.filter(participation__user=user)
 
 async def get_serialized_alarms(alarms):
     serializer = AlarmSerializer(alarms, many=True)
+    alarms.update(is_sent=True)
     return serializer.data
 
 # @receiver(post_save, sender=Alarm)
@@ -45,7 +46,6 @@ class AlarmConsumer(AsyncWebsocketConsumer):
         await self.accept()
         
         self.alarms = await get_alarms(self.user)
-        self.alarms.update(is_sent=True)
         serialized_alarms = await get_serialized_alarms(self.alarms)
 
         await self.channel_layer.group_send(
