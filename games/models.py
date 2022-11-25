@@ -9,17 +9,17 @@ from places.models import Place
 
 class OpenedGameManager(models.Manager):
     def get_queryset(self):
-        return super().get_queryset().filter(start_datetime__gt=timezone.now())
+        return super().get_queryset().filter(start_datetime__gt=timezone.now()).order_by('-start_datetime')
 
     
 class ClosedGameManager(models.Manager):
     def get_queryset(self):
-        return super().get_queryset().filter(start_datetime__lte=timezone.now())
+        return super().get_queryset().filter(start_datetime__lte=timezone.now()).order_by('-start_datetime')
 
 
 class AllGameManager(models.Manager):
     def get_queryset(self):
-        return super().get_queryset()
+        return super().get_queryset().order_by('-start_datetime')
 
 
 class Game(models.Model):
