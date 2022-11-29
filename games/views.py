@@ -128,30 +128,6 @@ class PlayerListView(views.APIView):
         }
         return Response(data, status=status.HTTP_200_OK)
     
-    # def post(self, request, game_id):
-    #     """_summary_
-    #     경기 참여
-
-    #     Args:
-    #         game_id (integer): 경기 ID
-
-    #     Returns:
-    #         Response: 
-    #             201 : 요청 정상 처리
-    #             400 : 중복 참여 신청
-    #             401 : 유효하지 않은 access_token
-    #             404 : 유효하지 않은 game_id
-    #     """
-    #     data = {
-    #         'game': game_id,
-    #         'user': request.user.id
-    #     }
-    #     serializer = ParticipationSerializer(data=data)
-    #     if serializer.is_valid(raise_exception=True):
-    #         serializer.save()
-    #         return Response(serializer.data, status=status.HTTP_201_CREATED)
-class ParticipationView(views.APIView):
-    
     def post(self, request, game_id):
         """_summary_
         경기 참여
@@ -238,4 +214,5 @@ class PlayerDetailView(views.APIView):
         serializer = ParticipationSerializer(obj)
         serializer.delete()
         return Response(status=status.HTTP_200_OK)
+        
         
