@@ -1,7 +1,6 @@
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.utils import IntegrityError
-from django.utils import timezone
 from rest_framework import serializers
 
 from .models import *
@@ -71,8 +70,12 @@ class ParticipationSerializer(serializers.ModelSerializer):
         """
         try:
             with transaction.atomic():
-                obj = self.Meta.model.objects.create(**validated_data)
-            return obj
+                obj, created = self.Meta.model.objects.get_or_create(**validated_data)
+                if created:
+                    return obj
+                if obj.deleted_at:
+                    return obj
+                raise DuplicatedParticipationException()
         except IntegrityError :
             raise DuplicatedParticipationException()
 

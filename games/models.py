@@ -59,14 +59,37 @@ class Game(models.Model):
     def decrease_player(self):
         self.player -= 1
         self.save(update_fields=['player'])
+        
+
+class ParticipationManager(models.Manager):
+    use_for_related_fields = True
+    
+    def get_queryset(self):
+        return super().get_queryset().filter(deleted_at__isnull=True)
+    
+
+class DeletedParticipationManager(models.Manager):
+    
+    def get_queryset(self):
+        return super().get_queryset().filter(deleted_at__isnull=False)
     
     
 class Participation(models.Model):
     game = models.ForeignKey(Game, on_delete=models.PROTECT)
     user = models.ForeignKey(get_user_model(), on_delete=models.CASCADE)
     
+    created_at = models.DateTimeField(auto_now_add=True)
+    deleted_at = models.DateTimeField(null=True, default=None)
+    
+    objects = ParticipationManager()
+    deleted_objects = DeletedParticipationManager()
+    
     class Meta:
         constraints = [
             models.UniqueConstraint(fields=['game', 'user'], name='unique participation')
         ]
-            
+        
+    @transaction.atomic()
+    def delete(self):
+        self.deleted_at = timezone.now()
+        self.save(update_fields=['deleted_at'])
