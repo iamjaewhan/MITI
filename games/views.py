@@ -218,7 +218,7 @@ class PlayerDetailView(views.APIView):
     
 
 
-from payment.payment import KakaoPayClient, KakaoPayRequestParameter
+from payment.payment import KakaoPayClient, KakaoPayReadyRequest
 from payment.models import *
 
 class ParticipationPaymentView(views.APIView):
@@ -242,7 +242,7 @@ class ParticipationPaymentView(views.APIView):
             raise NotFound("해당되는 참여 신청이 없습니다.")
         
         participation = participation_queryset.first()
-        request_params = KakaoPayRequestParameter(participation)
+        request_params = KakaoPayReadyRequest(participation)
         kakao_pay = KakaoPayClient()
         
         response_data = kakao_pay.ready(request_params).get_data()

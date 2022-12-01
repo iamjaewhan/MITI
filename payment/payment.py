@@ -1,16 +1,13 @@
 from django.conf import settings
+
 from games.models import Participation
 
-
-class KakaoPayRequestParameter:
+class KakaoPayReadyRequest:
     data = {
         'cid': getattr(settings, "KAKAO_CID"),
-        'approval_url': getattr(settings, "KAKAO_APPROVAL_URL"),
-        'fail_url': getattr(settings, "KAKAO_FAIL_URL"),
-        'cancel_url': getattr(settings, "KAKAO_CANCEL_URL"),
     }
     
-    def __init__(self, obj):
+    def __init__(self, obj : Participation):
         self.obj = obj
         self.set_data() 
     
@@ -22,8 +19,12 @@ class KakaoPayRequestParameter:
             self.data['quantity'] = 1
             self.data['total_amount'] = self.data['quantity'] * self.obj.game.fee
             self.data['tax_free_amount'] = 0
+            self.data['approval_url'] = getattr(settings, "KAKAO_APPROVAL_URL")%(self.obj.game.id, self.obj.user.id)
+            self.data['fail_url'] = getattr(settings, "KAKAO_FAIL_URL")%(self.obj.game.id, self.obj.user.id)
+            self.data['cancel_url'] = getattr(settings, "KAKAO_CANCEL_URL")%(self.obj.game.id, self.obj.user.id)
             
     def set_response(self, kwargs):
+        kwargs.pop('created_at')
         for key in kwargs.keys():
             self.data[key] = kwargs.get(key, self.data.get(key, None))
             
