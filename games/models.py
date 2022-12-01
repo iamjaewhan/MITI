@@ -79,7 +79,7 @@ class Participation(models.Model):
     user = models.ForeignKey(get_user_model(), on_delete=models.CASCADE)
     
     created_at = models.DateTimeField(auto_now_add=True)
-    deleted_at = models.DateTimeField(null=True, default=None)
+    deleted_at = models.DateTimeField(null=True, blank=True)
     
     objects = ParticipationManager()
     deleted_objects = DeletedParticipationManager()
