@@ -85,6 +85,13 @@ class ParticipationSerializer(serializers.ModelSerializer):
         """
         self.instance.delete()
     
+
+class PaymentRedirectUrlSerializer(serializers.Serializer):
+    next_redirect_pc_url = serializers.CharField()
+    next_redirect_app_url = serializers.CharField()
+    next_redirect_mobile_url = serializers.CharField()
+    
+    
     
 from payment.models import ParticipationPaymentRequest
 
