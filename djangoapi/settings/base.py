@@ -45,6 +45,7 @@ APPS = [
     'users',
     'games',
     'alarms',
+    'payment',
 ]
 
 THIRD_PARTIES = [
