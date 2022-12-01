@@ -31,6 +31,23 @@ class KakaoPayRequestParameter:
         return self.data
         
 
+import requests
 
+       
+class KakaoPayClient:
+    ADMIN_KEY = getattr(settings, "KAKAO_ADMIN_KEY")
+    READY_URL = getattr(settings, "KAKAO_PAY_READY_URL")
+    
+    headers = {
+        "Authorization": "KakaoAK " + f"{ADMIN_KEY}",
+        "Content-type": "application/x-www-form-urlencoded;charset=utf-8"
+    }
+    
+    def ready(self, params: KakaoPayRequestParameter):
+        res = requests.post(
+            self.READY_URL, headers=self.headers, params=params.get_data()
+        )
+        params.set_response(res.json())    
+        return params`
         
         
