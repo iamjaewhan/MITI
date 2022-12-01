@@ -1,6 +1,7 @@
 from rest_framework import views, status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.exceptions import NotFound
 from django.shortcuts import get_object_or_404 
 
 from users.serializers import BaseUserSerializer
@@ -214,5 +215,47 @@ class PlayerDetailView(views.APIView):
         serializer = ParticipationSerializer(obj)
         serializer.delete()
         return Response(status=status.HTTP_200_OK)
+    
+
+
+from payment.payment import KakaoPayClient, KakaoPayRequestParameter
+from payment.models import *
+
+class ParticipationPaymentView(views.APIView):
+    
+    def post(self, request, game_id, user_id):
+        """_summary_
+
+        Args:
+            game_id (integer): 경기 id
+            user_id (integer): 참여자 id
+
+        Raises:
+            NotFound: 경기id, 참여자id와 일치하는 참여 신청이 존재하지 않는 경우
+
+        Returns:
+            _type_: _description_
+        """
+        participation_queryset = Participation.objects.filter(game=game_id, user=user_id)
         
+        if not participation_queryset.exists():
+            raise NotFound("해당되는 참여 신청이 없습니다.")
         
+        participation = participation_queryset.first()
+        request_params = KakaoPayRequestParameter(participation)
+        kakao_pay = KakaoPayClient()
+        
+        response_data = kakao_pay.ready(request_params).get_data()
+        payment_request_queryset = ParticipationPaymentRequest.objects.filter(participation=participation)
+        
+        if not payment_request_queryset.exists():
+            payment_request_serializer = ParticipationPaymentRequestSerializer(data=response_data)
+            if payment_request_serializer.is_valid(raise_exception=True):
+                payment_request_serializer.save()
+        else:
+            payment_request = payment_request_queryset.first()
+            payment_request_serializer= ParticipationPaymentRequestSerializer()
+            payment_request_serializer.update(payment_request, response_data)
+        
+        redirect_url_serializer = PaymentRedirectUrlSerializer(response_data)
+        return Response(redirect_url_serializer.data, status=status.HTTP_200_OK)
