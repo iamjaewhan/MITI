@@ -84,4 +84,13 @@ class ParticipationSerializer(serializers.ModelSerializer):
         serializer로 전달한 객체를 삭제
         """
         self.instance.delete()
+    
+    
+from payment.models import ParticipationPaymentRequest
+
+class ParticipationPaymentRequestSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ParticipationPaymentRequest
+        fields = '__all__'
+            
         
