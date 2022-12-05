@@ -93,7 +93,7 @@ class PaymentRedirectUrlSerializer(serializers.Serializer):
     
     
     
-from payment.models import ParticipationPaymentRequest
+from payment.models import ParticipationPaymentRequest, ParticipationPaymentResult
 
 class ParticipationPaymentRequestSerializer(serializers.ModelSerializer):
     
@@ -121,5 +121,12 @@ class ParticipationPaymentRequestSerializer(serializers.ModelSerializer):
         self.instance.save(update_fields=['tid'])
                 
             
+    
+        
+class ParticipationPaymentResultSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model = ParticipationPaymentResult
+        fields = '__all__'
             
         

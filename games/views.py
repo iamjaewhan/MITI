@@ -218,7 +218,7 @@ class PlayerDetailView(views.APIView):
     
 
 
-from payment.payment import KakaoPayClient, KakaoPayReadyDto
+from payment.payment import KakaoPayClient, KakaoPayReadyDto, KakaoPayApprovalDto
 from payment.models import *
 
 class PaymentRequestBuilder:
@@ -275,18 +275,79 @@ class ParticipationPaymentView(views.APIView):
         return Response(url_serializer.data, status=status.HTTP_200_OK)
 
         
+
+from rest_framework.permissions import AllowAny
+
+
+class PaymentResultBuilder:
+    model = ParticipationPaymentRequest
+    built_fields = ('item_name', 'payment_request', 'quantity')
+    
+    def build(obj: ParticipationPaymentRequest):
+        assert isinstance(obj, PaymentResultBuilder.model), '알맞은 객체가 아닙니다.'
+        data= {}
+        data['payment_request'] = obj.id
+        data['item_name'] = obj.item_name
+        data['quantity'] = obj.quantity
         
-        response_data = kakao_pay.ready(request_params).get_data()
+        return data
+    
+
+class KakaoPaymentApprovalCallbackView(views.APIView):
+    permission_classes = [AllowAny, ]
+    
+    def get(self, request, game_id, user_id):
+        
+        participation_queryset = Participation.objects.filter(game=game_id, user=user_id)
+        
+        if not participation_queryset.exists():
+            raise NotFound("해당되는 참여 신청이 없습니다.")
+        
+        participation = participation_queryset.first()
         payment_request_queryset = ParticipationPaymentRequest.objects.filter(participation=participation)
         
         if not payment_request_queryset.exists():
-            payment_request_serializer = ParticipationPaymentRequestSerializer(data=response_data)
-            if payment_request_serializer.is_valid(raise_exception=True):
-                payment_request_serializer.save()
-        else:
-            payment_request = payment_request_queryset.first()
-            payment_request_serializer= ParticipationPaymentRequestSerializer()
-            payment_request_serializer.update(payment_request, response_data)
+            raise NotFound("해당되는 결제 신청이 없습니다.")
+    
+        payment_request = payment_request_queryset.first()
         
-        redirect_url_serializer = PaymentRedirectUrlSerializer(response_data)
-        return Response(redirect_url_serializer.data, status=status.HTTP_200_OK)
+        payment_result_queryset = ParticipationPaymentResult.objects.filter(payment_request=payment_request)
+            
+            
+            ## PaymentResult 객체를 생성하거나 기존에 존재하던 객체 가져오기
+        if payment_result_queryset.exists():
+            payment_result = payment_result_queryset.first()
+        else:
+            data = PaymentResultBuilder.build(payment_request)
+            result_serializer = ParticipationPaymentResultSerializer(
+                data=PaymentResultBuilder.build(payment_request))
+            if result_serializer.is_valid(raise_exception=True):
+                payment_result = result_serializer.save()
+ 
+        approval_request = KakaoPayApprovalDto(payment_request, request.GET.get('pg_token', None))
+        approval_request.set_param('participation', participation.id)
+        response_data = KakaoPayClient.approve(approval_request)
+        result_serializer = ParticipationPaymentResultSerializer(
+            payment_result, data=response_data.get_params()
+        )
+        
+        if result_serializer.is_valid(raise_exception=True):
+            payment_result = result_serializer.save()
+            return Response(result_serializer.data, status=status.HTTP_200_OK)
+
+
+class KakaoPaymentFailCallbackView(views.APIView):
+    permission_classes = [AllowAny, ]
+    
+    def get(self, request, game_id, user_id):
+        return Response(data={"message": "fail callback "}, status=status.HTTP_200_OK)
+        
+
+class KakaoPaymentCancelCallbackView(views.APIView):
+    permission_classes = [AllowAny, ]
+    
+    def get(self, request, game_id, user_id):
+        return Response(data={"message": "cancel callback "}, status=status.HTTP_200_OK)
+
+        
+            
