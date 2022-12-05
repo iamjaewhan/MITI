@@ -1,35 +1,42 @@
 from django.conf import settings
 
 from games.models import Participation
+from payment.models import ParticipationPaymentRequest 
 
-class KakaoPayReadyRequest:
-    data = {
+
+class KakaoPayReadyDto:
+    model = ParticipationPaymentRequest
+    required_param_keys = ('partner_order_id', 'partner_user_id', 'quantity', 'total_amount', 'tax_free_amount', 'item_name')
+    params = {
         'cid': getattr(settings, "KAKAO_CID"),
+        'approval_url': getattr(settings, "KAKAO_APPROVAL_URL"),
+        'cancel_url': getattr(settings, "KAKAO_FAIL_URL"),
+        'fail_url': getattr(settings, "KAKAO_CANCEL_URL")
     }
     
-    def __init__(self, obj : Participation):
-        self.obj = obj
-        self.set_data() 
+    def __init__(self, obj : ParticipationPaymentRequest):
+        assert isinstance(obj, KakaoPayReadyDto.model), '해당 모델로는 요청을 생성할 수 없습니다.'
+        
+        for key in self.required_param_keys:
+            self.params[key] = getattr(obj, key)
+            
+        self.set_urls(obj)
     
-    def set_data(self):
-        if isinstance(self.obj, Participation):
-            self.data['partner_order_id'] = self.obj.id
-            self.data['partner_user_id'] = self.obj.user.id
-            self.data['item_name'] = f'경기 참여 - {self.obj.id}'
-            self.data['quantity'] = 1
-            self.data['total_amount'] = self.data['quantity'] * self.obj.game.fee
-            self.data['tax_free_amount'] = 0
-            self.data['approval_url'] = getattr(settings, "KAKAO_APPROVAL_URL")%(self.obj.game.id, self.obj.user.id)
-            self.data['fail_url'] = getattr(settings, "KAKAO_FAIL_URL")%(self.obj.game.id, self.obj.user.id)
-            self.data['cancel_url'] = getattr(settings, "KAKAO_CANCEL_URL")%(self.obj.game.id, self.obj.user.id)
-            
-    def set_response(self, kwargs):
-        kwargs.pop('created_at')
+    def set_urls(self, obj:ParticipationPaymentRequest):
+        self.params['approval_url'] = self.params['approval_url']%(obj.participation.game.id, obj.participation.user.id)
+        self.params['cancel_url'] = self.params['cancel_url']%(obj.participation.game.id, obj.participation.user.id)
+        self.params['fail_url'] = self.params['fail_url']%(obj.participation.game.id, obj.participation.user.id)
+    
+    def read_response_data(self, **kwargs):
         for key in kwargs.keys():
-            self.data[key] = kwargs.get(key, self.data.get(key, None))
+            self.params[key] = kwargs[key]
             
-    def get_data(self):
-        return self.data
+    def add(self, key, value):
+        self.params[key] = value
+        
+    def get_params(self):
+        return self.params
+
         
 
 import requests

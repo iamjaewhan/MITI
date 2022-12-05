@@ -96,8 +96,30 @@ class PaymentRedirectUrlSerializer(serializers.Serializer):
 from payment.models import ParticipationPaymentRequest
 
 class ParticipationPaymentRequestSerializer(serializers.ModelSerializer):
+    
     class Meta:
         model = ParticipationPaymentRequest
         fields = '__all__'
+        
+    def get_or_create(self):
+        participation_queryset = self.Meta.model.objects.filter(
+            participation=self.initial_data['participation'])
+        
+        if participation_queryset.exists():
+            participation_obj = participation_queryset.first()
+            participation_obj.save()
+            self.instance = participation_obj
+            return participation_obj
+        
+        if self.is_valid(raise_exception=True):
+            participation_obj = self.save()
+            self.instance = participation_obj
+            return participation_obj
+
+    def set_tid(self, tid):
+        self.instance.tid = tid
+        self.instance.save(update_fields=['tid'])
+                
+            
             
         

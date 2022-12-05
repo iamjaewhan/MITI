@@ -218,8 +218,29 @@ class PlayerDetailView(views.APIView):
     
 
 
-from payment.payment import KakaoPayClient, KakaoPayReadyRequest
+from payment.payment import KakaoPayClient, KakaoPayReadyDto
 from payment.models import *
+
+class PaymentRequestBuilder:
+    """_summary_
+    입력받은 객체 타입에 따라 요청에 필요한 데이터들을 빌드하는 클래스
+
+    """
+    model = Participation
+    built_fields = ('item_name', 'partner_order_id', 'partner_user_id', 'quantity', 'total_amount', 'tax_free_amount')
+        
+    def build(obj : Participation):
+        assert isinstance(obj, PaymentRequestBuilder.model), '알맞은 객체가 아닙니다.'
+        data = {}
+        data['participation'] = obj.id
+        data['item_name'] = "PG"
+        data['partner_order_id'] = f'Participation{obj.id}'
+        data['partner_user_id'] = obj.user.id
+        data['quantity'] = 1
+        data['total_amount'] = obj.game.fee
+        data['tax_free_amount'] = 0
+        return data
+
 
 class ParticipationPaymentView(views.APIView):
     
@@ -237,13 +258,23 @@ class ParticipationPaymentView(views.APIView):
             _type_: _description_
         """
         participation_queryset = Participation.objects.filter(game=game_id, user=user_id)
-        
         if not participation_queryset.exists():
             raise NotFound("해당되는 참여 신청이 없습니다.")
-        
         participation = participation_queryset.first()
-        request_params = KakaoPayReadyRequest(participation)
+        request_serializer = ParticipationPaymentRequestSerializer(
+            data=PaymentRequestBuilder.build(participation))
+        request_obj = request_serializer.get_or_create()
+        ready_dto = KakaoPayReadyDto(request_obj)
         kakao_pay = KakaoPayClient()
+        result = kakao_pay.ready(ready_dto)
+        request_serializer.set_tid(
+            result.get_params().get('tid', None))
+
+        url_serializer = PaymentRedirectUrlSerializer(result.get_params())
+
+        return Response(url_serializer.data, status=status.HTTP_200_OK)
+
+        
         
         response_data = kakao_pay.ready(request_params).get_data()
         payment_request_queryset = ParticipationPaymentRequest.objects.filter(participation=participation)
