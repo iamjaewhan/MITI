@@ -26,11 +26,48 @@ class KakaoPayDto:
             self.add_param(key, kwargs[key])
     
 
+class KakaoPayReadyDto(KakaoPayDto):
+    required_parameters = ('partner_order_id', 'partner_user_id', 'quantity', 'total_amount', 'tax_free_amount', 'item_name')
 
+    def __init__(self, obj:ParticipationPaymentRequest):
+        assert isinstance(obj, ParticipationPaymentRequest), '해당 모델로는 요청을 생성할 수 없습니다.' 
         
+        for param in self.required_parameters:
+            self.add_param(param, getattr(obj, param, None))
+        self.set_urls(obj)
             
+    def set_urls(self, obj):
+        self.parameters['approval_url'] = getattr(
+            settings, "KAKAO_APPROVAL_URL")%(obj.id)
+        self.parameters['cancel_url'] = getattr(
+            settings, "KAKAO_FAIL_URL")%(obj.id)
+        self.parameters['fail_url'] = getattr(
+            settings, "KAKAO_CANCEL_URL")%(obj.id)
             
+    
+class KakaoPayApprovalDto(KakaoPayDto):
+    required_parameters = ('tid', 'partner_order_id', 'partner_user_id', 'pg_token')
+    response_parameters = ('aid', 'amount', 'approved_at')
+
+    def __init__(self, obj : ParticipationPaymentRequest):
+        assert isinstance(obj, ParticipationPaymentRequest), '해당 모델로는 요청을 생성할 수 없습니다.'
+
+        for param in self.required_parameters:
+            self.add_param(param, getattr(obj, param, None))
+    
+    def get_flatten(self):
+        return self.flatten(self.get_params())
+            
+    def flatten(self, data, prefix='', sep='_'):
+        items = []
+        for k, v in data.items():
+            new_key = k + sep + prefix if prefix else k
+            if isinstance(v, collections.MutableMapping):
+                items.extend(self.flatten(data=v, prefix=new_key, sep=sep).items())
             else:
+                items.append((new_key, v))
+        return dict(items)
+
         
         
 
