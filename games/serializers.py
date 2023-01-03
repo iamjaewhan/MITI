@@ -93,40 +93,96 @@ class PaymentRedirectUrlSerializer(serializers.Serializer):
     
     
     
-from payment.models import ParticipationPaymentRequest, ParticipationPaymentResult
+    
+from payment.models import *
+        
+
+
+class PaymentResultSerializer(serializers.ModelSerializer):
+    item_name = serializers.CharField(required=False)
+    
+    class Meta:
+        model = PaymentResult
+        fields = (
+            'aid',
+            'item_name',
+            'quantity',
+            'payment_method_type',
+            'total_amount',
+            'tax_free_amount',
+            'vat_amount',
+            'approved_at',
+            'status'
+        )
+        optional_fields = (
+            'aid',
+            'item_name',
+            'quantity',
+            'payment_method_type',
+            'total_amount',
+            'tax_free_amount',
+            'vat_amount',
+            'approved_at',
+            )
+        
 
 class ParticipationPaymentRequestSerializer(serializers.ModelSerializer):
+    payment_result = PaymentResultSerializer(
+        default = {
+            'payment_method_type': PaymentMethod.MONEY,
+            'item_name': Item.PICKUP_GAME,
+            'status': PaymentStatus.READY,
+            'quantity': 1,
+            })
     
     class Meta:
         model = ParticipationPaymentRequest
-        fields = '__all__'
+        fields = (
+            'participation', 
+            'item_name', 
+            'tax_free_amount',
+            'vat_amount',
+            'tid',
+            'payment_result'
+        )
+        optional_fields = (
+            'participation',
+            'item_name', 
+            'tax_free_amount',
+            'vat_amount',
+            'tid',
+            'payment_result'
+        )
         
-    def get_or_create(self):
-        participation_queryset = self.Meta.model.objects.filter(
-            participation=self.initial_data['participation'])
+    @transaction.atomic()
+    def create(self, validated_data):
+        """_summary_
+        결제 결과와 결제 요청을 생성시키는 메소드
         
-        if participation_queryset.exists():
-            participation_obj = participation_queryset.first()
-            participation_obj.save()
-            self.instance = participation_obj
-            return participation_obj
-        
-        if self.is_valid(raise_exception=True):
-            participation_obj = self.save()
-            self.instance = participation_obj
-            return participation_obj
-
-    def set_tid(self, tid):
-        self.instance.tid = tid
-        self.instance.save(update_fields=['tid'])
-                
-            
+        """
+        payment_result_data = validated_data.pop('payment_result')
+        payment_result_obj = PaymentResult.objects.create(**payment_result_data)
+        participation_data = validated_data['participation']
+        instance = ParticipationPaymentRequest.objects.create(
+            payment_result=payment_result_obj,
+            partner_order_id=f'Participation#{participation_data.id}',
+            partner_user_id=f'{participation_data.user_id}',
+            quantity=1,
+            total_amount=1*participation_data.game.fee,
+            **validated_data
+            )
+        return instance
     
+    def update(self, instance, validated_data):
+        instance.tid = validated_data.get('tid', instance.tid)
+        instance.save()
+        return instance
         
-class ParticipationPaymentResultSerializer(serializers.ModelSerializer):
+        
+        
+        
+        
+        
     
-    class Meta:
-        model = ParticipationPaymentResult
-        fields = '__all__'
             
         
