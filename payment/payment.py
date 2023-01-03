@@ -84,13 +84,13 @@ class KakaoPayClient:
         "Content-type": "application/x-www-form-urlencoded;charset=utf-8"
     }
     
-    
     def ready(self, params):
         res = requests.post(
-            self.READY_URL, headers=self.headers, params=params.get_params()
-        )
-        params.read_response_data(**res.json())    
-        return params
+            self.READY_URL, headers=self.headers, params=params.get_params())
+        if res.status_code == 200:
+            params.read_response(**res.json())    
+            return params
+        raise RequestFailException()
         
     def approve(params):        
         res = requests.post(
