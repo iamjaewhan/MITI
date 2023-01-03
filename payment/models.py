@@ -4,10 +4,20 @@ from django.utils.translation import gettext as _
 from games.models import Participation
 
 # Create your models here.
-ITEM_NAME = (
-    ("PG", _("PICKUP GAME")),
-)
+class Item(models.TextChoices):
+    PICKUP_GAME = 'PG'
 
+
+class PaymentStatus(models.TextChoices):
+    READY = 'RD'
+    APPROVED = 'AP'
+    FAILED = 'FL'
+    CANCELED = 'CL'
+    
+class PaymentMethod(models.TextChoices):
+    CARD = 'CD'
+    MONEY = 'MN'
+    
 class ParticipationPaymentRequest(models.Model):
     ##요청필수
     item_name = models.CharField(max_length=30, choices=ITEM_NAME, default="PG")
