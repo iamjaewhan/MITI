@@ -11,7 +11,7 @@ from utils.validators import GameTimeValidator
 from constants.custom_exceptions import (
     DuplicatedParticipationException,
     UnParticipatableException,
-    FullGameException
+    FullGameException,
 )
 
 class BaseGameSerializer(serializers.ModelSerializer):
@@ -28,7 +28,6 @@ class GameRegisterSerializer(serializers.ModelSerializer):
         model = Game
         fields = '__all__'
         
-    
     def validate(self, data):
         """_summary_
         start_datetime, end_datetime 관계 유효성 점검
@@ -91,6 +90,12 @@ class PaymentRedirectUrlSerializer(serializers.Serializer):
     next_redirect_app_url = serializers.CharField()
     next_redirect_mobile_url = serializers.CharField()
     
+    
+class PaymentInfoSerializer(serializers.Serializer):
+    quantity = serializers.IntegerField()
+    total_amount = serializers.IntegerField()
+    tax_free_amount = serializers.IntegerField()
+    vat_amount = serializers.IntegerField(required=False) 
     
     
     
