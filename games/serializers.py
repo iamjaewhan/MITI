@@ -125,6 +125,7 @@ class PaymentResultSerializer(serializers.ModelSerializer):
             'approved_at',
             )
         
+    def update(self, instance, validated_data):
 
 class ParticipationPaymentRequestSerializer(serializers.ModelSerializer):
     payment_result = PaymentResultSerializer(

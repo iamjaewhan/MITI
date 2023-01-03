@@ -1,7 +1,10 @@
-from django.db import models
+from django.db import models, transaction
 from django.utils.translation import gettext as _
+from django.utils import timezone
+from rest_framework.exceptions import ValidationError
 
 from games.models import Participation
+from constants.custom_exceptions import UnchangeableStatusException
 
 # Create your models here.
 class Item(models.TextChoices):
@@ -78,6 +81,59 @@ class PaymentResult(models.Model):
     approved_at = models.DateTimeField(null=True, blank=True)
     canceled_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    
+    
+    @transaction.atomic()
+    def change_status(self, **kwargs):
+        try:
+            with transaction.atomic():
+                status = kwargs.get('status', None)
+         
+                if status == PaymentStatus.APPROVED:
+                    self.aid = kwargs.pop('aid')
+                    self.total_amount = kwargs.pop('total_amount')
+                    self.tax_free_amount = kwargs.pop('tax_free_amount')
+                    self.vat_amount = kwargs.pop('vat_amount')
+                    self.status = PaymentStatus.APPROVED
+                    self.approved_at = kwargs.pop('approved_at')
+                    self.save()
+                    return self
+
+                if status == PaymentStatus.READY:
+                    self.aid = None
+                    self.total_amount = None
+                    self.tax_free_amount = None
+                    self.vat_amount = None
+                    self.status = PaymentStatus.READY
+                    self.approved_at = None
+                    self.canceled_at = None
+                    self.save()
+                    return self
+
+                if status == PaymentStatus.CANCELED:
+                    self.status = PaymentStatus.CANCELED
+                    self.canceled_at = timezone.localtime()
+                    self.save()
+                    return self
+
+                else:
+                    self.status = PaymentStatus.FAILED
+                    self.save()
+                    return self
+                
+        except KeyError as e:
+            raise ValidationError()
+        except Exception as e:
+            raise ValidationError()
+
+    
+    def set_status(self, **kwargs):
+        status = kwargs.get('status', None)
+
+        if PaymentStatus.of(self.status).is_convertible_to(status):
+            return self.change_status(**kwargs)
+        raise UnchangeableStatusException()
+        
     
 class ParticipationPaymentRequest(models.Model):
     item_name = models.CharField(max_length=10, choices=Item.choices, default=Item.PICKUP_GAME)
