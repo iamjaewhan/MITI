@@ -266,20 +266,29 @@ class ParticipationPaymentView(views.APIView):
         return payment_request_obj
             
 
+    def post(self, request, game_id, participation_id):
 
-class PaymentResultBuilder:
-    model = ParticipationPaymentRequest
-    built_fields = ('item_name', 'payment_request', 'quantity')
+        participation_obj = self.get_object()
+        payment_request_obj = self.get_or_create_payment_request(participation_obj)
+        ready_dto = KakaoPayReadyDto(payment_request_obj)
     
-    def build(obj: ParticipationPaymentRequest):
-        assert isinstance(obj, PaymentResultBuilder.model), '알맞은 객체가 아닙니다.'
-        data= {}
-        data['payment_request'] = obj.id
-        data['item_name'] = obj.item_name
-        data['quantity'] = obj.quantity
-        
-        return data
-    
+        kakao_client = KakaoPayClient()
+        ready_dto = kakao_client.ready(ready_dto)
+        ready_dto.add_param('participation', participation_id)
+        payment_request_serializer = ParticipationPaymentRequestSerializer(
+            payment_request_obj, data=ready_dto.get_params())
+                
+        if payment_request_serializer.is_valid(raise_exception=True):
+            payment_request_serializer.save()
+
+        return Response(
+            {
+                'payment_information': PaymentInfoSerializer(ready_dto.get_params()).data,
+                'payment_urls': PaymentRedirectUrlSerializer(ready_dto.get_params()).data
+            },
+            status = status.HTTP_200_OK
+        )
+
 
 class KakaoPaymentApprovalCallbackView(views.APIView):
     permission_classes = [AllowAny, ]
