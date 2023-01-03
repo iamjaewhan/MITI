@@ -9,17 +9,17 @@ from places.models import Place
 
 class OpenedGameManager(models.Manager):
     def get_queryset(self):
-        return super().get_queryset().filter(start_datetime__gt=timezone.now())
+        return super().get_queryset().filter(start_datetime__gt=timezone.now()).order_by('-start_datetime')
 
     
 class ClosedGameManager(models.Manager):
     def get_queryset(self):
-        return super().get_queryset().filter(start_datetime__lte=timezone.now())
+        return super().get_queryset().filter(start_datetime__lte=timezone.now()).order_by('-start_datetime')
 
 
 class AllGameManager(models.Manager):
     def get_queryset(self):
-        return super().get_queryset()
+        return super().get_queryset().order_by('-start_datetime')
 
 
 class Game(models.Model):
@@ -37,6 +37,7 @@ class Game(models.Model):
     start_datetime = models.DateTimeField(default=timezone.now, null=False)
     end_datetime = models.DateTimeField(default=timezone.now, null=False)
     address = models.CharField(max_length=255, default='경기도 화성시 동탄대로 6길 20')
+    fee = models.IntegerField(default=0, null=False)
     info = models.CharField(max_length=255, null=True)
     
     objects = OpenedGameManager()
@@ -58,14 +59,37 @@ class Game(models.Model):
     def decrease_player(self):
         self.player -= 1
         self.save(update_fields=['player'])
+        
+
+class ParticipationManager(models.Manager):
+    use_for_related_fields = True
+    
+    def get_queryset(self):
+        return super().get_queryset().filter(deleted_at__isnull=True)
+    
+
+class DeletedParticipationManager(models.Manager):
+    
+    def get_queryset(self):
+        return super().get_queryset().filter(deleted_at__isnull=False)
     
     
 class Participation(models.Model):
     game = models.ForeignKey(Game, on_delete=models.PROTECT)
     user = models.ForeignKey(get_user_model(), on_delete=models.CASCADE)
     
+    created_at = models.DateTimeField(auto_now_add=True)
+    deleted_at = models.DateTimeField(null=True, blank=True)
+    
+    objects = ParticipationManager()
+    deleted_objects = DeletedParticipationManager()
+    
     class Meta:
         constraints = [
             models.UniqueConstraint(fields=['game', 'user'], name='unique participation')
         ]
-            
+        
+    @transaction.atomic()
+    def delete(self):
+        self.deleted_at = timezone.now()
+        self.save(update_fields=['deleted_at'])

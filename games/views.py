@@ -1,6 +1,7 @@
 from rest_framework import views, status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.exceptions import NotFound
 from django.shortcuts import get_object_or_404 
 
 from users.serializers import BaseUserSerializer
@@ -214,5 +215,124 @@ class PlayerDetailView(views.APIView):
         serializer = ParticipationSerializer(obj)
         serializer.delete()
         return Response(status=status.HTTP_200_OK)
+    
+
+
+from payment.payment import KakaoPayClient, KakaoPayReadyDto, KakaoPayApprovalDto
+from payment.models import *
+from constants.custom_exceptions import *
+
+
+class ParticipationPaymentView(views.APIView):
+    permission_classes = [IsOwner]
         
+    def get_object(self):
+        obj = get_object_or_404(Participation.objects.all(), id=self.kwargs['participation_id'])
+        self.check_object_permissions(self.request, obj)
+        return obj
+    
+    def get_or_create_payment_request(self, participation_obj):
+        """_summary_
+        Participation에 해당하는 PaymentRequest 인스턴스를 반환하는 메소드
         
+        Returns:
+            ParticipationRequest 인스턴스
+        """
+        payment_request_queryset = ParticipationPaymentRequest.objects.filter(
+            participation=participation_obj)
+        
+        # 기존의 request 기록이 존재하는 경우
+        if payment_request_queryset.exists():
+            payment_request_obj = payment_request_queryset.select_related('payment_result').first()
+            payment_result = payment_request_obj.payment_result
+            
+            # 기존의 요청이 결제가 완료된 경우
+            if payment_result.status == PaymentStatus.APPROVED:
+                raise DuplicatedPaymentException()
+            
+            # 기존 결제 요청 상태가 READY가 아닌 경우
+            if payment_result.status != PaymentStatus.READY:
+                # 기존 결제 요청 상태 변경 구현
+                pass
+
+        # 기존의 request 기록이 존재하지 않는 경우 -> request생성 
+        else:
+            payment_request_serializer = ParticipationPaymentRequestSerializer(
+                data={'participation': participation_obj.id})
+            
+            if payment_request_serializer.is_valid(raise_exception=True):
+                payment_request_obj = payment_request_serializer.save()
+                
+        return payment_request_obj
+            
+
+    def post(self, request, game_id, participation_id):
+
+        participation_obj = self.get_object()
+        payment_request_obj = self.get_or_create_payment_request(participation_obj)
+        ready_dto = KakaoPayReadyDto(payment_request_obj)
+    
+        kakao_client = KakaoPayClient()
+        ready_dto = kakao_client.ready(ready_dto)
+        ready_dto.add_param('participation', participation_id)
+        payment_request_serializer = ParticipationPaymentRequestSerializer(
+            payment_request_obj, data=ready_dto.get_params())
+                
+        if payment_request_serializer.is_valid(raise_exception=True):
+            payment_request_serializer.save()
+
+        return Response(
+            {
+                'payment_information': PaymentInfoSerializer(ready_dto.get_params()).data,
+                'payment_urls': PaymentRedirectUrlSerializer(ready_dto.get_params()).data
+            },
+            status = status.HTTP_200_OK
+        )
+
+
+from rest_framework.permissions import AllowAny
+
+
+class KakaoPaymentApprovalCallbackView(views.APIView):
+    permission_classes = [AllowAny, ]
+    
+    def get_object(self):
+        obj = get_object_or_404(ParticipationPaymentRequest.objects.select_related('payment_result').all(), id=self.kwargs['payment_request_id'])
+        self.check_object_permissions(self.request, obj)
+        return obj
+    
+    def get(self, request, payment_request_id):
+        payment_request_obj = self.get_object()
+        payment_result_obj = payment_request_obj.payment_result
+        
+        approval_dto = KakaoPayApprovalDto(payment_request_obj)
+        approval_dto.add_param('pg_token', request.GET.get('pg_token', None))
+    
+        kakao_client = KakaoPayClient()
+        approval_dto = kakao_client.approve(approval_dto)
+        
+        payment_result_serializer = PaymentResultSerializer(
+            payment_result_obj, data=approval_dto.get_flatten()
+        )
+                
+        if payment_result_serializer.is_valid(raise_exception=True):
+            payment_result_serializer.save()
+
+        return Response(status=status.HTTP_200_OK)
+
+
+class KakaoPaymentFailCallbackView(views.APIView):
+    permission_classes = [AllowAny, ]
+    
+    def get(self, request, game_id, user_id):
+        return Response(data={"message": "fail callback "}, status=status.HTTP_200_OK)
+        
+
+class KakaoPaymentCancelCallbackView(views.APIView):
+    permission_classes = [AllowAny, ]
+    
+    def get(self, request, game_id, user_id):
+        return Response(data={"message": "cancel callback "}, status=status.HTTP_200_OK)
+
+        
+            

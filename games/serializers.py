@@ -1,7 +1,6 @@
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.utils import IntegrityError
-from django.utils import timezone
 from rest_framework import serializers
 
 from .models import *
@@ -12,7 +11,7 @@ from utils.validators import GameTimeValidator
 from constants.custom_exceptions import (
     DuplicatedParticipationException,
     UnParticipatableException,
-    FullGameException
+    FullGameException,
 )
 
 class BaseGameSerializer(serializers.ModelSerializer):
@@ -29,7 +28,6 @@ class GameRegisterSerializer(serializers.ModelSerializer):
         model = Game
         fields = '__all__'
         
-    
     def validate(self, data):
         """_summary_
         start_datetime, end_datetime 관계 유효성 점검
@@ -71,8 +69,12 @@ class ParticipationSerializer(serializers.ModelSerializer):
         """
         try:
             with transaction.atomic():
-                obj = self.Meta.model.objects.create(**validated_data)
-            return obj
+                obj, created = self.Meta.model.objects.get_or_create(**validated_data)
+                if created:
+                    return obj
+                if obj.deleted_at:
+                    return obj
+                raise DuplicatedParticipationException()
         except IntegrityError :
             raise DuplicatedParticipationException()
 
@@ -81,4 +83,115 @@ class ParticipationSerializer(serializers.ModelSerializer):
         serializer로 전달한 객체를 삭제
         """
         self.instance.delete()
+    
+
+class PaymentRedirectUrlSerializer(serializers.Serializer):
+    next_redirect_pc_url = serializers.CharField()
+    next_redirect_app_url = serializers.CharField()
+    next_redirect_mobile_url = serializers.CharField()
+    
+    
+class PaymentInfoSerializer(serializers.Serializer):
+    quantity = serializers.IntegerField()
+    total_amount = serializers.IntegerField()
+    tax_free_amount = serializers.IntegerField()
+    vat_amount = serializers.IntegerField(required=False) 
+    
+    
+    
+from payment.models import *
+        
+
+
+class PaymentResultSerializer(serializers.ModelSerializer):
+    item_name = serializers.CharField(required=False)
+    
+    class Meta:
+        model = PaymentResult
+        fields = (
+            'aid',
+            'item_name',
+            'quantity',
+            'payment_method_type',
+            'total_amount',
+            'tax_free_amount',
+            'vat_amount',
+            'approved_at',
+            'status'
+        )
+        optional_fields = (
+            'aid',
+            'item_name',
+            'quantity',
+            'payment_method_type',
+            'total_amount',
+            'tax_free_amount',
+            'vat_amount',
+            'approved_at',
+            )
+        
+    def update(self, instance, validated_data):
+        return instance.set_status(**validated_data)
+
+                
+
+class ParticipationPaymentRequestSerializer(serializers.ModelSerializer):
+    payment_result = PaymentResultSerializer(
+        default = {
+            'payment_method_type': PaymentMethod.MONEY,
+            'item_name': Item.PICKUP_GAME,
+            'status': PaymentStatus.READY,
+            'quantity': 1,
+            })
+    
+    class Meta:
+        model = ParticipationPaymentRequest
+        fields = (
+            'participation', 
+            'item_name', 
+            'tax_free_amount',
+            'vat_amount',
+            'tid',
+            'payment_result'
+        )
+        optional_fields = (
+            'participation',
+            'item_name', 
+            'tax_free_amount',
+            'vat_amount',
+            'tid',
+            'payment_result'
+        )
+        
+    @transaction.atomic()
+    def create(self, validated_data):
+        """_summary_
+        결제 결과와 결제 요청을 생성시키는 메소드
+        
+        """
+        payment_result_data = validated_data.pop('payment_result')
+        payment_result_obj = PaymentResult.objects.create(**payment_result_data)
+        participation_data = validated_data['participation']
+        instance = ParticipationPaymentRequest.objects.create(
+            payment_result=payment_result_obj,
+            partner_order_id=f'Participation#{participation_data.id}',
+            partner_user_id=f'{participation_data.user_id}',
+            quantity=1,
+            total_amount=1*participation_data.game.fee,
+            **validated_data
+            )
+        return instance
+    
+    def update(self, instance, validated_data):
+        instance.tid = validated_data.get('tid', instance.tid)
+        instance.save()
+        return instance
+        
+        
+        
+        
+        
+        
+    
+            
         
