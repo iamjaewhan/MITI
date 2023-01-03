@@ -290,47 +290,35 @@ class ParticipationPaymentView(views.APIView):
         )
 
 
+from rest_framework.permissions import AllowAny
+
+
 class KakaoPaymentApprovalCallbackView(views.APIView):
     permission_classes = [AllowAny, ]
     
-    def get(self, request, game_id, user_id):
-        
-        participation_queryset = Participation.objects.filter(game=game_id, user=user_id)
-        
-        if not participation_queryset.exists():
-            raise NotFound("해당되는 참여 신청이 없습니다.")
-        
-        participation = participation_queryset.first()
-        payment_request_queryset = ParticipationPaymentRequest.objects.filter(participation=participation)
-        
-        if not payment_request_queryset.exists():
-            raise NotFound("해당되는 결제 신청이 없습니다.")
+    def get_object(self):
+        obj = get_object_or_404(ParticipationPaymentRequest.objects.select_related('payment_result').all(), id=self.kwargs['payment_request_id'])
+        self.check_object_permissions(self.request, obj)
+        return obj
     
-        payment_request = payment_request_queryset.first()
+    def get(self, request, payment_request_id):
+        payment_request_obj = self.get_object()
+        payment_result_obj = payment_request_obj.payment_result
         
-        payment_result_queryset = ParticipationPaymentResult.objects.filter(payment_request=payment_request)
-            
-            
-            ## PaymentResult 객체를 생성하거나 기존에 존재하던 객체 가져오기
-        if payment_result_queryset.exists():
-            payment_result = payment_result_queryset.first()
-        else:
-            data = PaymentResultBuilder.build(payment_request)
-            result_serializer = ParticipationPaymentResultSerializer(
-                data=PaymentResultBuilder.build(payment_request))
-            if result_serializer.is_valid(raise_exception=True):
-                payment_result = result_serializer.save()
- 
-        approval_request = KakaoPayApprovalDto(payment_request, request.GET.get('pg_token', None))
-        approval_request.set_param('participation', participation.id)
-        response_data = KakaoPayClient.approve(approval_request)
-        result_serializer = ParticipationPaymentResultSerializer(
-            payment_result, data=response_data.get_params()
+        approval_dto = KakaoPayApprovalDto(payment_request_obj)
+        approval_dto.add_param('pg_token', request.GET.get('pg_token', None))
+    
+        kakao_client = KakaoPayClient()
+        approval_dto = kakao_client.approve(approval_dto)
+        
+        payment_result_serializer = PaymentResultSerializer(
+            payment_result_obj, data=approval_dto.get_flatten()
         )
-        
-        if result_serializer.is_valid(raise_exception=True):
-            payment_result = result_serializer.save()
-            return Response(result_serializer.data, status=status.HTTP_200_OK)
+                
+        if payment_result_serializer.is_valid(raise_exception=True):
+            payment_result_serializer.save()
+
+        return Response(status=status.HTTP_200_OK)
 
 
 class KakaoPaymentFailCallbackView(views.APIView):
