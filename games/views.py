@@ -220,63 +220,51 @@ class PlayerDetailView(views.APIView):
 
 from payment.payment import KakaoPayClient, KakaoPayReadyDto, KakaoPayApprovalDto
 from payment.models import *
-
-class PaymentRequestBuilder:
-    """_summary_
-    입력받은 객체 타입에 따라 요청에 필요한 데이터들을 빌드하는 클래스
-
-    """
-    model = Participation
-    built_fields = ('item_name', 'partner_order_id', 'partner_user_id', 'quantity', 'total_amount', 'tax_free_amount')
-        
-    def build(obj : Participation):
-        assert isinstance(obj, PaymentRequestBuilder.model), '알맞은 객체가 아닙니다.'
-        data = {}
-        data['participation'] = obj.id
-        data['item_name'] = "PG"
-        data['partner_order_id'] = f'Participation{obj.id}'
-        data['partner_user_id'] = obj.user.id
-        data['quantity'] = 1
-        data['total_amount'] = obj.game.fee
-        data['tax_free_amount'] = 0
-        return data
+from constants.custom_exceptions import *
 
 
 class ParticipationPaymentView(views.APIView):
-    
-    def post(self, request, game_id, user_id):
-        """_summary_
-
-        Args:
-            game_id (integer): 경기 id
-            user_id (integer): 참여자 id
-
-        Raises:
-            NotFound: 경기id, 참여자id와 일치하는 참여 신청이 존재하지 않는 경우
-
-        Returns:
-            _type_: _description_
-        """
-        participation_queryset = Participation.objects.filter(game=game_id, user=user_id)
-        if not participation_queryset.exists():
-            raise NotFound("해당되는 참여 신청이 없습니다.")
-        participation = participation_queryset.first()
-        request_serializer = ParticipationPaymentRequestSerializer(
-            data=PaymentRequestBuilder.build(participation))
-        request_obj = request_serializer.get_or_create()
-        ready_dto = KakaoPayReadyDto(request_obj)
-        kakao_pay = KakaoPayClient()
-        result = kakao_pay.ready(ready_dto)
-        request_serializer.set_tid(
-            result.get_params().get('tid', None))
-
-        url_serializer = PaymentRedirectUrlSerializer(result.get_params())
-
-        return Response(url_serializer.data, status=status.HTTP_200_OK)
-
+    permission_classes = [IsOwner]
         
+    def get_object(self):
+        obj = get_object_or_404(Participation.objects.all(), id=self.kwargs['participation_id'])
+        self.check_object_permissions(self.request, obj)
+        return obj
+    
+    def get_or_create_payment_request(self, participation_obj):
+        """_summary_
+        Participation에 해당하는 PaymentRequest 인스턴스를 반환하는 메소드
+        
+        Returns:
+            ParticipationRequest 인스턴스
+        """
+        payment_request_queryset = ParticipationPaymentRequest.objects.filter(
+            participation=participation_obj)
+        
+        # 기존의 request 기록이 존재하는 경우
+        if payment_request_queryset.exists():
+            payment_request_obj = payment_request_queryset.select_related('payment_result').first()
+            payment_result = payment_request_obj.payment_result
+            
+            # 기존의 요청이 결제가 완료된 경우
+            if payment_result.status == PaymentStatus.APPROVED:
+                raise DuplicatedPaymentException()
+            
+            # 기존 결제 요청 상태가 READY가 아닌 경우
+            if payment_result.status != PaymentStatus.READY:
+                # 기존 결제 요청 상태 변경 구현
+                pass
 
-from rest_framework.permissions import AllowAny
+        # 기존의 request 기록이 존재하지 않는 경우 -> request생성 
+        else:
+            payment_request_serializer = ParticipationPaymentRequestSerializer(
+                data={'participation': participation_obj.id})
+            
+            if payment_request_serializer.is_valid(raise_exception=True):
+                payment_request_obj = payment_request_serializer.save()
+                
+        return payment_request_obj
+            
 
 
 class PaymentResultBuilder:
