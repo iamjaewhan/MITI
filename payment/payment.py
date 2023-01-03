@@ -7,6 +7,7 @@ from constants.custom_exceptions import (
     RequestFailException,
 )
 
+import collections
 
 
 class KakaoPayDto:
@@ -17,7 +18,6 @@ class KakaoPayDto:
     def get_params(self):
         return self.parameters
     
-            
     def add_param(self, key, value):
         self.parameters[key] = value
         
@@ -68,11 +68,12 @@ class KakaoPayApprovalDto(KakaoPayDto):
                 items.append((new_key, v))
         return dict(items)
 
+                
+    
         
         
-
 import requests
-
+       
        
 class KakaoPayClient:
     ADMIN_KEY = getattr(settings, "KAKAO_ADMIN_KEY")
@@ -92,13 +93,18 @@ class KakaoPayClient:
             return params
         raise RequestFailException()
         
-    def approve(params):        
+    def approve(self, params):        
         res = requests.post(
             KakaoPayClient.APPROVE_URL, headers=KakaoPayClient.headers, params=params.get_params()
         )
-        
-        params.set_response(res.json())
-        print(params.get_params())
-        return params
-        
+        if res.status_code == 200:
+            params.read_response(**res.json())
+            params.add_param('payment_method_type', PaymentMethod.MONEY)
+            params.add_param('status', PaymentStatus.APPROVED)
+            return params
+        if res.status_code == 400:
+            params.add_param('status', PaymentStatus.of(res.json()['status']))
+            params.read_response(**res.json())
+            return params
+        raise RequestFailException()
         
