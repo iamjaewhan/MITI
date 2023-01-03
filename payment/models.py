@@ -14,10 +14,50 @@ class PaymentStatus(models.TextChoices):
     FAILED = 'FL'
     CANCELED = 'CL'
     
+    @classmethod
+    def of(cls, name):
+        assert isinstance(name, str), "name must be string object"
+        name = name.upper()
+        
+        if name in cls.__members__:
+            return cls.__members__[name]
+        
+        for key in cls.__members__:
+            if cls.__members__[key] == name:
+                return cls.__members__[key]
+        
+        return None
+
+    def is_convertible_to(self, next_status):
+        if self == PaymentStatus.READY and next_status in (PaymentStatus.APPROVED, PaymentStatus.FAILED):
+            return True
+        if self == PaymentStatus.APPROVED and next_status == PaymentStatus.CANCELED:
+            return True
+        if self == PaymentStatus.CANCELED and next_status == PaymentStatus.READY:
+            return True
+        if self == PaymentStatus.FAILED and next_status == PaymentStatus.READY:
+            return True
+        return False
+                
+    
 class PaymentMethod(models.TextChoices):
     CARD = 'CD'
     MONEY = 'MN'
     
+    @classmethod
+    def of(cls, name):
+        assert isinstance(name, str), "name must be string object"
+        name = name.upper()
+        
+        if name in cls.__members__:
+            return cls.__members__[name]
+        
+        for key in cls.__members__:
+            if cls.__members__[key] == name:
+                return cls.__members__[key]
+        
+        return None
+
 
 class PaymentResult(models.Model):    
     aid = models.CharField(max_length=50, null=True, blank=True)
